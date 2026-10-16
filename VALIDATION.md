@@ -82,3 +82,5 @@
 - Local MCP settings reject cross-origin/incorrect-host writes and non-JSON requests. Config persists and hot-disable rejects subsequent requests.
 - Configuration reload and read-only SQLite verified; Go tests/vet and reader race test passed.
 - Actual Auth0/other provider authorization-code login/refresh, fixed Cloudflare tunnel, ChatGPT plugin installation, Dot and mobile calls remain pending user account setup. This is not a completed ChatGPT integration.
+
+- Final OCI image `013a96fa5e7a` smoke test in a separate synthetic-data container passed: automatic startup, web MCP page, APK SHA-256, FFmpeg/model presence, upload/read, dedup and restart persistence. MCP returned 503 before configuration. Live user data container was not used for synthetic uploads.

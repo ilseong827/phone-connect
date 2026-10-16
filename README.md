@@ -2,7 +2,9 @@
 
 **내 휴대폰의 카카오톡·문자·통화 녹음을 PC에 보관하고 Dot에서 조회합니다.**
 
-[설치 파일](https://github.com/ilseong827/phone-connect/releases/latest) · [Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Android 앱](app/README.md)
+[설치 파일](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.0) · [Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Android 앱](app/README.md)
+
+> v1.2.0은 MCP 프리뷰입니다. OAuth 제공자·주소 설정과 실제 ChatGPT/Dot 연결 검증은 사용자 계정에서 마쳐야 합니다.
 
 ## 구조
 
@@ -45,7 +47,7 @@ podman run -d --name phone-connect --restart=unless-stopped \
 
 PC와 Podman/WSL이 실행 중이어야 수신됩니다. 절전·종료 상태에서는 수신할 수 없습니다. 재시작 정책이 PC 전원이나 Windows 시작을 대신하지는 않습니다.
 
-기본 무료 Quick Tunnel은 재시작 시 URL이 바뀔 수 있습니다. 이 경우 웹에서 휴대폰 QR과 Dot 연결 파일을 다시 받습니다. 고정 주소 운영에는 별도 도메인·터널 설정이 필요합니다.
+기본 무료 Quick Tunnel은 재시작 시 URL이 바뀔 수 있습니다. 이 경우 휴대폰 QR을 다시 받고, MCP 공개 주소·OAuth API 식별자·ChatGPT 연결도 갱신해야 합니다. 고정 주소 운영에는 별도 도메인·터널 설정이 필요합니다.
 
 MCP는 OAuth와 본인 계정 검증을 사용합니다. 이전 Python 조회키는 호환용이며 MCP 인증에는 사용할 수 없습니다. 관리 웹과 기존 MCP 포트는 외부 터널에 연결하지 않습니다. 실제 Dot에서 조회 성공 여부는 별도로 확인해야 합니다.
 
