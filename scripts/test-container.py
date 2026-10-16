@@ -53,7 +53,7 @@ for base, path, key in [(dot['url'],'/v1/read/relay_status',pair['uploadKey']),
     else: raise AssertionError('Credential separation failed')
 for path in ['/api/connection','/api/dot-connection','/api/control/stop','/mcp']:
     try: request(dot['url']+path, dot['readKey'])
-    except urllib.error.HTTPError as e: assert e.code == 404
+    except urllib.error.HTTPError as e: assert e.code == (503 if path == '/mcp' else 404)
     else: raise AssertionError('Private route exposed')
 print('PASS: external HTTPS upload, authenticated read, duplicate prevention, credential separation, private-route isolation',flush=True)
 Path('.tools/container-test-dot.json').write_text(json.dumps(dot),encoding='utf-8')

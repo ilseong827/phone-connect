@@ -72,3 +72,13 @@
 - 현재 컨테이너는 테스트 데이터로 별도 운영하며 기존 개인 기록 서버는 유지함. 기존 기록의 컨테이너 이전과 휴대폰 새 주소 연결은 아직 수행하지 않음. PC 전원·절전·WSL 자동 시작과 90일 상시 운영은 보장하지 않음.
 
 - Android v0.5.0: 서버 변경 재동기화 수정. 단위 테스트 4개, 빌드/lint 성공. 실제 Samsung 기기에서 완료된 SMS/녹음/연락처 표시만 초기화하고 미전송·카톡·공유 이력을 보존하는 격리 DB 테스트 통과. 기존 저장된 URL/키/전송 설정 유지 확인. 새 버전 업데이트 설치 완료. 실제 사용자의 재전송 완료는 별도 확인 필요.
+
+
+## OAuth remote MCP implementation (2026-10-16)
+
+- Official MCP Go SDK v1.8.0 HTTP client/server: discovery, eight tools, synthetic SMS query passed.
+- OAuth resource metadata and real RSA signed JWT checks: issuer, audience, owner subject, expiry, nbf, scope and signature failures reject access. Legacy upload/read keys do not authenticate MCP.
+- HTTPS test identity-provider discovery/JWKS passed; no bearer token is forwarded to discovery.
+- Local MCP settings reject cross-origin/incorrect-host writes and non-JSON requests. Config persists and hot-disable rejects subsequent requests.
+- Configuration reload and read-only SQLite verified; Go tests/vet and reader race test passed.
+- Actual Auth0/other provider authorization-code login/refresh, fixed Cloudflare tunnel, ChatGPT plugin installation, Dot and mobile calls remain pending user account setup. This is not a completed ChatGPT integration.

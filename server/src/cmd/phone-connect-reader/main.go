@@ -378,7 +378,16 @@ func main() {
 	if os.Getenv("POCKETRELAY_CONTAINER") == "1" {
 		bind = "0.0.0.0"
 	}
-	server := http.Server{Addr: fmt.Sprintf("%s:%d", bind, *port), Handler: &gateway{db: db, key: key, data: *data}, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 5 * time.Minute, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16384}
+	g := &gateway{db: db, key: key, data: *data}
+	mcpHandler := newMCP(g)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/mcp" || strings.HasPrefix(r.URL.Path, "/.well-known/") {
+			mcpHandler.ServeHTTP(w, r)
+			return
+		}
+		g.ServeHTTP(w, r)
+	})
+	server := http.Server{Addr: fmt.Sprintf("%s:%d", bind, *port), Handler: handler, ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 5 * time.Minute, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16384}
 	log.Printf("Phone Connect Reader %s listening on loopback port %d", version, *port)
 	log.Fatal(server.ListenAndServe())
 }

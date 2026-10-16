@@ -1,0 +1,19 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Phone Connect · MCP 연결</title>
+<style>body{font:16px/1.6 system-ui;background:#f5f7f4;color:#20362b;max-width:760px;margin:40px auto;padding:20px}section{background:white;padding:24px;border-radius:16px;margin:20px 0}label{display:block;margin:16px 0}input[type=text],input[type=url]{display:block;box-sizing:border-box;width:100%;padding:12px;border:1px solid #aabbaf;border-radius:6px}button{padding:12px 18px;cursor:pointer}code{overflow-wrap:anywhere}#status{white-space:pre-wrap}a{color:#256645}</style>
+<a href="/">← 기록으로 돌아가기</a><h1>ChatGPT · Dot MCP 연결</h1>
+<p>문자·카카오톡·통화 전사를 ChatGPT가 조회하도록 연결합니다. Python 파일을 전달하지 않습니다.</p>
+<section><h2>1. 서버와 로그인 계정 설정</h2>
+<p>OAuth 제공자에서 본인의 로그인 계정과 API를 준비한 뒤 아래 값을 입력하세요. 비밀번호나 Client Secret은 여기에 입력하지 않습니다.</p>
+<form id="settings"><label><input id="enabled" type="checkbox"> MCP 조회 활성화</label>
+<label>공개 HTTPS 기본 주소<input id="publicUrl" type="url" placeholder="https://records.example.com" autocomplete="off"></label>
+<p id="tunnel"></p><p>계속 사용하려면 고정 주소를 사용하세요. 임시 주소가 바뀌면 OAuth API 식별자와 ChatGPT 연결도 수정해야 합니다.</p>
+<label>OAuth 발급자 주소 (Issuer)<input id="issuer" type="url" placeholder="https://your-tenant.auth0.com/" autocomplete="off"></label>
+<label>본인 계정의 사용자 ID (Subject)<input id="ownerSubject" type="text" placeholder="auth0|... 또는 google-oauth2|..." autocomplete="off"></label>
+<p>이 사용자 ID와 일치하는 계정에만 기록을 제공합니다. 이메일이나 OAuth Client ID가 아닙니다.</p>
+<button type="submit">설정 저장</button></form><p id="status" role="status"></p></section>
+<section><h2>2. ChatGPT에서 연결</h2><p>웹의 계정용 사용자 지정 MCP/플러그인 등록에서 다음 값을 사용하세요. 데스크톱 앱의 로컬 MCP 등록은 계정 전체 연결과 다릅니다.</p>
+<p>이름: <b>Phone Connect</b><br>MCP 주소: <code id="endpoint">설정 후 표시됩니다.</code><br>인증: <b>OAuth</b><br>API 식별자 / Audience: <code id="audience"></code><br>조회 권한: <code>records:read</code></p>
+<p>로그인 제공자에서 PKCE S256과 resource 매개변수 처리가 필요합니다. ChatGPT가 표시하는 정확한 OAuth 콜백 주소를 등록하세요.</p>
+<p><a href="https://github.com/ilseong827/phone-connect/blob/main/server/MCP.md" target="_blank" rel="noreferrer">설정 및 검증 안내</a></p>
+<p>설정 저장은 연결 성공을 뜻하지 않습니다. ChatGPT에서 인증 후 상태·테스트 기록 조회를 확인해야 합니다. 녹음은 전사 텍스트로 조회하며 원본 음성 스트리밍은 제공하지 않습니다.</p></section>
+<script src="/mcp.js" defer></script></html>

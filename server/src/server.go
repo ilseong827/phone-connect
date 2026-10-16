@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"pocketrelay/internal/mcpconfig"
 	"regexp"
 	"strconv"
 	"strings"
@@ -338,6 +339,55 @@ func sniff(path string) string {
 	return http.DetectContentType(b)
 }
 func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/mcp-config" {
+		if r.Method == "GET" {
+			c, e := mcpconfig.Load(a.dir)
+			if e != nil && !os.IsNotExist(e) {
+				fail(w, 500, "Invalid saved MCP config")
+				return
+			}
+			logBytes, _ := os.ReadFile(filepath.Join(a.dir, "reader-tunnel.log"))
+			matches := regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`).FindAllString(string(logBytes), -1)
+			current := ""
+			if len(matches) > 0 {
+				current = matches[len(matches)-1]
+			}
+			respond(w, 200, map[string]any{"config": c, "temporaryUrl": current, "scope": mcpconfig.Scope, "mcpUrl": c.Resource()})
+			return
+		}
+		if r.Method != "POST" {
+			fail(w, 405, "Use GET or POST")
+			return
+		}
+		// The local-only wrapper checks Host and Origin; JSON plus this custom header
+		// blocks cross-site form submissions and browser simple requests.
+		if r.Header.Get("X-Phone-Connect") != "local-settings" || r.Header.Get("Content-Type") != "application/json" {
+			fail(w, 403, "Local settings request required")
+			return
+		}
+		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16384))
+		dec.DisallowUnknownFields()
+		var c mcpconfig.Config
+		if dec.Decode(&c) != nil {
+			fail(w, 400, "Invalid configuration")
+			return
+		}
+		var extra any
+		if dec.Decode(&extra) != io.EOF {
+			fail(w, 400, "Invalid JSON")
+			return
+		}
+		if e := c.Validate(); e != nil {
+			fail(w, 400, e.Error())
+			return
+		}
+		if e := mcpconfig.Save(a.dir, c); e != nil {
+			fail(w, 500, "Could not save configuration")
+			return
+		}
+		respond(w, 200, map[string]any{"saved": true, "mcpUrl": c.Resource()})
+		return
+	}
 	if pairingAsset(w, r) {
 		return
 	}
@@ -364,10 +414,10 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch p {
-	case "/", "/chat.js":
+	case "/", "/chat.js", "/mcp.html", "/mcp.js":
 		name := "web/chat.html"
 		if p != "/" {
-			name = "web/chat.js"
+			name = "web" + p
 		}
 		b, _ := webFiles.ReadFile(name)
 		w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(name)))

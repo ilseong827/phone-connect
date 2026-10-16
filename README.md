@@ -2,7 +2,7 @@
 
 **내 휴대폰의 카카오톡·문자·통화 녹음을 PC에 보관하고 Dot에서 조회합니다.**
 
-[설치 파일](https://github.com/ilseong827/phone-connect/releases/latest) · [Podman 실행 안내](server/container/README.md) · [Dot 연결](dot/README.md) · [Android 앱](app/README.md)
+[설치 파일](https://github.com/ilseong827/phone-connect/releases/latest) · [Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Android 앱](app/README.md)
 
 ## 구조
 
@@ -14,7 +14,7 @@ server/
   legacy-windows/    기존 Windows 수신 서버 (이전·호환용)
   Containerfile      FFmpeg·whisper.cpp·모델·터널 포함 이미지
   run.sh             Podman 시작·중지 도우미
-dot/                 외부 HTTPS 조회 클라이언트·Dot 지시문
+dot/                 이전 Python 조회 도구 (호환용)
 scripts/             배포 도구
 ```
 
@@ -36,7 +36,7 @@ podman run -d --name phone-connect --restart=unless-stopped \
 
 - PC 웹: **http://localhost:8788**
 - 웹 **연결 → 휴대폰 QR**: 앱에서 스캔하여 서버 주소·인증키 입력
-- 웹 **연결 → Dot 연결 파일 다운로드**: 비공개로 Dot에 전달하고 [연결 지시문](dot/SETUP.txt) 사용
+- 웹 **연결 → MCP 연결 설정 열기**: [OAuth · ChatGPT 계정 연결 안내](server/MCP.md). 로그인 제공자와 고정 주소 설정 후 연결합니다.
 - 데이터: PC의 `phone-connect-data/` 바인드 마운트 폴더. 컨테이너를 삭제해도 PC의 마운트 폴더를 지우지 않으면 기록은 남습니다.
 
 소스 빌드와 Windows/WSL 시작 방법은 [서버 안내](server/container/README.md)를 따릅니다. 컨테이너 안에 음성 도구와 한국어 지원 base 모델을 포함하므로 호스트에서 FFmpeg·빌드 도구를 설치할 필요가 없습니다.
@@ -47,7 +47,7 @@ PC와 Podman/WSL이 실행 중이어야 수신됩니다. 절전·종료 상태�
 
 기본 무료 Quick Tunnel은 재시작 시 URL이 바뀔 수 있습니다. 이 경우 웹에서 휴대폰 QR과 Dot 연결 파일을 다시 받습니다. 고정 주소 운영에는 별도 도메인·터널 설정이 필요합니다.
 
-Dot 조회키는 휴대폰 업로드키와 분리돼 있습니다. 관리 웹과 기존 MCP 포트는 외부 터널에 연결하지 않습니다. 실제 Dot에서 조회 성공 여부는 별도로 확인해야 합니다.
+MCP는 OAuth와 본인 계정 검증을 사용합니다. 이전 Python 조회키는 호환용이며 MCP 인증에는 사용할 수 없습니다. 관리 웹과 기존 MCP 포트는 외부 터널에 연결하지 않습니다. 실제 Dot에서 조회 성공 여부는 별도로 확인해야 합니다.
 
 카톡은 수신 알림 기반이며 발신 카톡·전체 과거 대화·모든 첨부 원본을 자동으로 가져오지는 못합니다. SMS/MMS 송수신을 지원하고 RCS는 제외합니다. 녹음 내용은 전사 완료 후 조회되며 음성 인식 오류가 있을 수 있습니다.
 

@@ -1,3 +1,5 @@
+현재 권장 연결은 ChatGPT 계정용 원격 MCP입니다. server/MCP.md를 참고하세요. 아래 Python 방식은 이전 호환용이며 계정 플러그인 연결이 아닙니다.
+
 # Dot 연결 — 파일 하나로 실행
 
 PC 웹의 **연결 → Dot 연결 파일 다운로드 (.py)**에서 `dot-reader.py`를 받으세요.

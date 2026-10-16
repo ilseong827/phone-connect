@@ -31,10 +31,14 @@ phone-connect-reader --data /data --key-file /data/reader.key &
 reader=$!
 if [[ "${PHONE_CONNECT_TUNNEL:-on}" == on ]]; then
  : >/data/reader-tunnel.log
- cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8790 2>/data/reader-tunnel.log &
+ if [[ -s /data/reader-tunnel-token ]]; then
+  cloudflared tunnel --no-autoupdate --protocol http2 run --token-file /data/reader-tunnel-token 2>/data/reader-tunnel.log &
+ else
+  cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8790 2>/data/reader-tunnel.log &
+ fi
  tunnel=$!
 fi
-echo 'Phone Connect ready. Open the local web page and select Connection for mobile QR and Dot configuration.'
+echo 'Phone Connect ready. Open the local web page and select Connection for mobile QR and ChatGPT MCP settings.'
 set +e
 wait -n
 exit 1

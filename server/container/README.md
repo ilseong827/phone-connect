@@ -1,3 +1,7 @@
+## 현재 ChatGPT / Dot 연결
+
+권장 방식은 **OAuth 인증된 원격 MCP 플러그인**입니다. [MCP 설정 안내](../MCP.md)를 따르세요. 웹의 연결 창에서 MCP 설정을 열 수 있습니다. 아래 Python 조회 설명은 이전 버전 호환용입니다. 고정 조회 터널은 `/data/reader-tunnel-token` 파일을 준비하면 시작 시 자동 실행합니다.
+
 # Phone Connect · Podman 단일 컨테이너
 
 수신 서버, 로컬 웹, Dot 조회 API, FFmpeg, whisper.cpp, Cloudflare 터널을 **컨테이너 하나**에서 실행합니다. Compose는 필요 없습니다. 휴대폰과 Dot은 이 PC의 서버에 각각 HTTPS로 접속합니다. Dot에서 서버를 실행하거나 포트를 공개할 필요가 없습니다.

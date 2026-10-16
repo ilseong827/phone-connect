@@ -28,3 +28,7 @@ daemon/pocketrelay
 
 /phone-connect-data/
 /receiver
+
+# Private generated connection files
+dot-reader.py
+reader-tunnel-token
