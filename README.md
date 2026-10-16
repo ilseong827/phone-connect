@@ -2,12 +2,23 @@
 
 **Connect your messages and call recordings to Dot & Web.**
 
-[설치 파일 다운로드 (Releases)](https://github.com/ilseong827/phone-connect/releases/latest) · 비공개 저장소이므로 접근 권한이 있는 GitHub 계정으로 로그인하세요.
+[설치 파일 다운로드 (Releases)](https://github.com/ilseong827/phone-connect/releases/latest) · 공개 저장소이며 로그인 없이 소스와 설치 파일을 받을 수 있습니다.
 
 내 휴대폰의 카카오톡 수신 알림·문자·통화 녹음을 로컬 웹과 Dot에 연결합니다. 서버 실행 명령은 기존 호환성을 위해 `pocketrelay`를 사용합니다.
 
+v1.1: `pocketrelay --pair`로 **QR 연결 페이지 링크·서버 주소·인증키**를 확인합니다. Android v0.4.1부터 앱의 서버 → QR로 연결 버튼으로 PC/Dot 웹페이지의 QR을 찍으면 주소/키가 바로 입력됩니다. `pocketrelay --check-link`는 외부 HTTPS 접속과 인증키를 실제 검증합니다. SSH 없이 수신할 수 있지만 터널용 외부 네트워크 연결은 허용되어야 합니다.
+
 - [GitHub에서 내려받기·설치·배포](GITHUB.md)
 - [Ubuntu 설치와 Dot 연결](daemon/README-UBUNTU.md)
+
+
+## Dot에 설치를 요청할 때
+
+이 저장소는 **공개**입니다. Dot에 아래 저장소 링크와 요청문을 전달하면 GitHub 로그인 없이 소스와 최신 설치 파일을 받을 수 있습니다.
+
+> 이 저장소의 README.md, GITHUB.md, daemon/README-UBUNTU.md, daemon/DOT-SETUP.txt를 읽고 최신 Releases의 패키지를 내 Ubuntu 컴퓨터에 설치해 줘. 백그라운드 실행과 로컬 웹 8788을 확인하고, 외부 수신 연결을 검증한 뒤 휴대폰 연결 QR 페이지 링크를 보여줘. 이어서 읽기 전용 MCP를 연결하고 실제 조회까지 테스트해 줘. 환경에서 막히는 단계는 성공했다고 하지 말고 알려줘.
+
+설치 순서: 최신 릴리스 다운로드·체크섬 확인 → 네이티브 서버 설치 → HTTPS 터널 검사 → QR 연결 → Dot MCP 연결·실제 조회. 상세 명령은 위 설치 문서를 따릅니다. 아래 Android/Windows 설명에는 이전 버전의 변경 이력이 포함되어 있습니다.
 
 ## Android · 내 기록 보내기
 
@@ -36,7 +47,7 @@
 - 카톡 대기 본문은 앱 전용 SQLite에 저장됩니다. 서버의 저장 확인 후 본문을 지우고 중복 방지용 ID만 유지합니다. 녹음 전송 완료 ID도 유지합니다.
 - 인증키는 Android Keystore의 AES-GCM 키로 암호화합니다. 앱 백업과 평문 HTTP는 비활성화했고 HTTPS 리디렉션도 따르지 않습니다.
 - 새 서버로 주소를 바꿔도 이미 전송 완료된 기록을 자동 재전송하지 않습니다.
-- 녹음 텍스트 변환·요약, 통화 직접 녹음, Dot 연결은 이 버전에 포함하지 않습니다.
+- 통화 직접 녹음은 포함하지 않습니다. Ubuntu 서버는 선택적 로컬 전사와 Dot용 읽기 전용 MCP를 제공합니다. 실제 Dot 계정 연결은 별도 설정·검증이 필요합니다.
 
 ## 수신 프로토콜
 
@@ -123,7 +134,7 @@ JDK 17, Android SDK platform 35 / build-tools 35.0.0을 사용합니다. Android
 4. HTTPS 수신 서버 연결 후 카톡/녹음의 저장 확인과 대기열 감소를 확인합니다.
 5. 비행기 모드에서 수집한 후 연결 복구, 재전송, 중복 저장 방지, 재부팅 후 동작을 확인합니다.
 
-실제 삼성 기기의 알림·폴더 접근·백그라운드 동작 검증은 아직 수행하지 않았습니다.
+검증 이력은 [VALIDATION.md](VALIDATION.md)를 확인하세요. 장기 백그라운드 동작은 기기 절전 정책에 따라 달라집니다.
 
 
 ## v0.2 업데이트 · 문자와 사진

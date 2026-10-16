@@ -28,7 +28,7 @@ class ChatViewer(Viewer):
         self.send_response(200)
         for key, value in {'Content-Type': mime, 'Content-Length': str(len(body)), 'Cache-Control': 'no-store',
                            'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
-                           'Content-Security-Policy': "default-src 'self'; style-src 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'"}.items():
+                           'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'"}.items():
             self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
@@ -102,8 +102,8 @@ class ChatViewer(Viewer):
             file = ROOT / '.tools/pc-session.json'
             config = json.loads(file.read_text('utf-8-sig')) if file.exists() else {}
             self.reply({'url': config.get('url', ''), 'token': config.get('token', '')})
-        elif part.path in ('/', '/chat.js'):
-            file = 'chat.html' if part.path == '/' else 'chat.js'
+        elif part.path in ('/', '/chat.js', '/qrcode.min.js'):
+            file = {'/':'chat.html','/chat.js':'chat.js','/qrcode.min.js':'qrcode.min.js'}[part.path]
             self.reply((Path(__file__).parent / file).read_bytes(), 'text/html; charset=utf-8' if file.endswith('html') else 'text/javascript; charset=utf-8')
         else:
             super().do_GET()

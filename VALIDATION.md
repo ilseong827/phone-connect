@@ -44,3 +44,17 @@
 - 실제 Dot 컴퓨터 설치, ChatGPT 계정의 Secure MCP Tunnel 연결·플러그인 활성화, Dot 장기 프로세스 유지, 새 서버로 휴대폰 재연결은 미수행. 배포 안내에 이 단계와 제품 한계를 명시.
 - whisper.cpp·FFmpeg는 우분투 테스트 환경에 설치됨. 배포 패키지는 서버와 Android APK를 포함하고, 음성 인식 엔진/모델 및 cloudflared는 별도 설치 스크립트를 제공함.
 
+## QR 연결 v1.1 / Android v0.4.1 검증 (2026-10-16)
+
+- 최종 흐름: PC/Dot 웹페이지가 앱 연결 데이터를 담은 QR 코드를 표시하고, 휴대폰 앱의 서버 → QR로 연결 버튼이 Google Code Scanner 카메라를 실행한다. 직접 입력은 별도 버튼으로 입력란을 펼친다. 휴대폰 웹페이지를 다시 여는 단계는 제거했다.
+- v0.4.1 APK 재빌드·lint·단위 테스트·실기기 자동 입력 및 HTTPS 인증 재검증 통과. Google Play 서비스 스캐너의 실제 광학 촬영 동작은 사용자 카메라 조작으로 확인해야 한다.
+
+- Go 9개 테스트 통과(실행 파일 수명주기 및 실제 음성 전사 포함), go vet 통과. 새 검증: 키를 HTTP 쿼리로 보내지 않는 fragment 인코딩, 공개 pair 페이지의 인증키 비노출, 사적 조회 endpoint 외부 차단, 연결 확인 endpoint의 인증 성공/실패.
+- Android assembleDebug/assembleDebugAndroidTest/lintDebug/testDebugUnitTest 성공. 링크 파서 단위 테스트 2개 통과(정상 키 특수문자, HTTP/사용자정보/중복키/잘못된 버전/개행 등 거부).
+- 실제 Samsung SM-S931N에 v0.4.0 업데이트 설치 성공. instrumentation으로 cold/warm 링크 수신, 서버 화면 선택, 주소·인증키 자동 입력을 확인. 저장된 원래 URL·암호화된 인증키·전송 스위치가 바뀌지 않았음을 확인.
+- 실제 휴대폰에서 별도 테스트 서버의 외부 Cloudflare HTTPS 주소에 인증 요청하여 HTTP 200 확인. 사적인 메시지·녹음은 테스트 서버로 보내지 않음.
+- WSL Ubuntu에서 HTTP/2 outbound 터널 생성, --check-link의 reachable/authenticated 모두 true 확인. 외부 HTTPS로 합성 이벤트를 전송하고 로컬 viewer에서 수신 확인.
+- Chrome 외부 HTTPS pair 페이지에서 320px QR 이미지 렌더링과 앱 deep link, 서버/키 수동 입력 필드 확인. QR 카메라 광학 스캔 자체와 실제 Dot 컴퓨터의 네트워크 정책은 미검증.
+
+
+- 최종 사용자 확인: 실제 휴대폰 카메라로 웹 QR을 스캔하고 연결이 정상 동작함을 확인(2026-10-16). 앞선 광학 스캔 미검증 상태를 해소함. Dot 환경은 아직 미검증.

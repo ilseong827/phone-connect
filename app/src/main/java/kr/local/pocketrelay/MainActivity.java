@@ -21,6 +21,8 @@ public class MainActivity extends Activity {
     SharedPreferences prefs;
     String currentPage="상태";
     TextView smsStatus;
+    Button serverNavigation;
+    LinearLayout manualConnection;
     int dp(int n){return (int)(n*getResources().getDisplayMetrics().density);}
     public void onCreate(Bundle b){super.onCreate(b);prefs=Store.prefs(this);getWindow().setStatusBarColor(Color.rgb(244,247,245));getWindow().setNavigationBarColor(Color.rgb(244,247,245));
         ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.setBackgroundColor(Color.rgb(244,247,245));
@@ -71,11 +73,15 @@ public class MainActivity extends Activity {
         button(sms,"문자 지금 확인",()->syncNow());
         label(sms,"문자함 변경 시 수집을 예약하고, 약 15분 주기로 다시 확인합니다. 절전 상태에서는 지연될 수 있습니다. 작성 중·실패한 문자는 보낸 문자로 표시하지 않습니다.",12,ink,false);
         LinearLayout network=card();label(network,"03   받을 곳",20,ink,true);
+        button(network,"QR로 연결 · 카메라 열기",this::scanPairing);
+        button(network,"직접 입력",()->manualConnection.setVisibility(View.VISIBLE));
+        label(network,"PC 또는 Dot의 연결 웹페이지에 QR을 띄운 뒤 이 버튼으로 찍으세요. 서버 주소와 인증키가 바로 입력됩니다.",13,ink,false);
         label(network,"수신 서버는 나중에 연결해도 됩니다. 그동안 카톡은 앱 안에 보관하고, 녹음은 원래 폴더에서 전송을 기다립니다.",14,ink,false);
-        server=edit(network,"https://내-서버-주소",false);server.setText(prefs.getString("url",""));
-        token=edit(network,"인증키 · 저장된 키는 빈칸이면 유지",true);
-        wifi=new Switch(this);wifi.setText("Wi-Fi에서만 전송");wifi.setChecked(prefs.getBoolean("wifi",true));network.addView(wifi);
-        button(network,"수신 주소 저장 · 전송 켜기",()->saveServer());
+        manualConnection=new LinearLayout(this);manualConnection.setOrientation(LinearLayout.VERTICAL);network.addView(manualConnection);manualConnection.setVisibility(View.GONE);
+        server=edit(manualConnection,"https://내-서버-주소",false);server.setText(prefs.getString("url",""));
+        token=edit(manualConnection,"인증키 · 저장된 키는 빈칸이면 유지",true);
+        wifi=new Switch(this);wifi.setText("Wi-Fi에서만 전송");wifi.setChecked(prefs.getBoolean("wifi",true));manualConnection.addView(wifi);
+        button(manualConnection,"연결 · 저장하고 전송 켜기",()->saveServer());
         button(network,"전송 일시 중지",()->{prefs.edit().putBoolean("upload",false).apply();refresh();});
         button(network,"지금 확인하고 전송",()->{
             status.setText("파일과 전송 대기열을 확인 중입니다…");
@@ -91,6 +97,29 @@ public class MainActivity extends Activity {
         }).setNegativeButton("취소",null).show());
         installNavigation(state,kakao,sms,audio,network,privacy);
         SyncJob.schedule(this,true);SyncJob.watchSms(this);refresh();
+        if(b==null)importPairing(getIntent());
+    }
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);importPairing(intent);}
+    void scanPairing(){
+        com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions options=new com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).enableAutoZoom().build();
+        com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(this,options).startScan()
+            .addOnSuccessListener(barcode->{String value=barcode.getRawValue();if(value==null){toast("연결 QR을 읽지 못했습니다.");return;}importPairing(new Intent(Intent.ACTION_VIEW,Uri.parse(value)));})
+            .addOnCanceledListener(()->toast("QR 스캔을 취소했습니다."))
+            .addOnFailureListener(error->toast("QR 스캐너를 준비하지 못했습니다. Google Play 서비스와 인터넷 연결을 확인한 뒤 다시 시도하거나 주소·인증키를 직접 입력하세요."));
+    }
+    void importPairing(Intent intent){
+        if(intent==null||!Intent.ACTION_VIEW.equals(intent.getAction())||intent.getData()==null)return;
+        try{
+            Pairing config=Pairing.parse(intent.getData().toString());
+            if(serverNavigation!=null)serverNavigation.performClick();
+            manualConnection.setVisibility(View.VISIBLE);
+            server.setText(config.server);token.setText(config.key);
+            new AlertDialog.Builder(this).setTitle("QR 연결 정보가 입력되었습니다")
+                .setMessage("받을 서버:\n"+config.server+"\n\n주소와 인증키를 저장하면 대기 중인 기록이 이 서버로 전송됩니다. 본인의 서버인지 확인하세요.")
+                .setPositiveButton("이 서버로 연결",(d,w)->saveServer()).setNegativeButton("입력만 유지",null).show();
+        }catch(IllegalArgumentException e){toast(e.getMessage());}
+        intent.setData(null);
     }
     void syncNow(){status.setText("문자·녹음·전송 대기열 확인 중…");executor.execute(()->{try{SyncJob.run(this);}catch(Exception e){prefs.edit().putString("status","전송 대기 · "+e.getMessage()).apply();}runOnUiThread(this::refresh);});}
     void installNavigation(LinearLayout state,LinearLayout kakao,LinearLayout sms,LinearLayout audio,LinearLayout network,LinearLayout privacy){
@@ -99,7 +128,7 @@ public class MainActivity extends Activity {
         label(rail,"p.",30,Color.WHITE,true);
         ScrollView pageScroll=new ScrollView(this);pageScroll.setFillViewport(true);LinearLayout.LayoutParams right=new LinearLayout.LayoutParams(0,-1,1);root.addView(pageScroll,right);
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(12),dp(18),dp(12),dp(16));pageScroll.addView(content);
-        TextView pageTitle=label(content,"상태",26,ink,true);label(content,"내 기록 보내기 · v0.3",11,green,false);
+        TextView pageTitle=label(content,"상태",26,ink,true);label(content,"Phone Connect · v0.4",11,green,false);
         FrameLayout pages=new FrameLayout(this);content.addView(pages,new LinearLayout.LayoutParams(-1,-2));
         String[] names={"상태","카카오톡","문자","녹음","서버"};LinearLayout[] cards={state,kakao,sms,audio,network};LinearLayout[] containers=new LinearLayout[5];Button[] buttons=new Button[5];
         for(int i=0;i<5;i++){
@@ -108,6 +137,7 @@ public class MainActivity extends Activity {
             if(i==0){((android.view.ViewGroup)privacy.getParent()).removeView(privacy);page.addView(privacy);}
             Button nav=new Button(this);nav.setText(names[i]);nav.setTextSize(12);nav.setAllCaps(false);nav.setMinWidth(0);nav.setMinimumWidth(0);nav.setPadding(0,dp(8),0,dp(8));nav.setTextColor(Color.WHITE);nav.setBackgroundColor(i==0?Color.rgb(52,96,75):Color.TRANSPARENT);rail.addView(nav,new LinearLayout.LayoutParams(-1,dp(58)));buttons[i]=nav;
             final int selected=i;nav.setOnClickListener(v->{currentPage=names[selected];pageTitle.setText(currentPage);for(int j=0;j<5;j++){containers[j].setVisibility(j==selected?View.VISIBLE:View.GONE);buttons[j].setBackgroundColor(j==selected?Color.rgb(52,96,75):Color.TRANSPARENT);}pageScroll.scrollTo(0,0);refresh();});
+            if(i==4)serverNavigation=nav;
         }
         root.setOnApplyWindowInsetsListener((v,in)->{v.setPadding(0,in.getSystemWindowInsetTop(),0,in.getSystemWindowInsetBottom());return in;});
         setContentView(root);

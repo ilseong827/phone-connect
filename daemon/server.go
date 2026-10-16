@@ -128,6 +128,17 @@ func (a *App) state() map[string]any {
 	return map[string]any{"running": true, "pid": os.Getpid(), "version": version, "data": a.dir, "started": a.started, "records": n, "transcribed": t, "links": links(a.dir, a.cfg)}
 }
 func (a *App) ingest(w http.ResponseWriter, r *http.Request) {
+	if pairingAsset(w, r) {
+		return
+	}
+	if r.URL.Path == "/v1/pair/check" && r.Method == "POST" {
+		if !authorized(r, a.cfg.UploadKey) {
+			fail(w, 401, "Unauthorized")
+			return
+		}
+		respond(w, 200, map[string]any{"ok": true, "service": "Phone Connect", "version": version})
+		return
+	}
 	if r.Method == "GET" && r.URL.Path == "/health" {
 		respond(w, 200, map[string]any{"ok": true, "service": "PocketRelay"})
 		return
@@ -313,6 +324,9 @@ func sniff(path string) string {
 	return http.DetectContentType(b)
 }
 func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
+	if pairingAsset(w, r) {
+		return
+	}
 	p := r.URL.Path
 	if strings.HasPrefix(p, "/api/control/") {
 		if !authorized(r, a.cfg.AdminKey) {
@@ -343,7 +357,7 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 		}
 		b, _ := webFiles.ReadFile(name)
 		w.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(name)))
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'")
 		w.Write(b)
 	case "/api/events":
 		after, _ := strconv.ParseInt(r.URL.Query().Get("after"), 10, 64)

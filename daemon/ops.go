@@ -185,7 +185,11 @@ func (a *App) tunnel(ctx context.Context) {
 	os.Remove(filepath.Join(a.dir, "tunnel-url"))
 	pattern := regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`)
 	for ctx.Err() == nil {
-		cmd := exec.CommandContext(ctx, a.cfg.Cloudflared, "tunnel", "--no-autoupdate", "--url", fmt.Sprintf("http://127.0.0.1:%d", a.cfg.IngestPort))
+		protocol := a.cfg.TunnelProtocol
+		if protocol == "" {
+			protocol = "auto"
+		}
+		cmd := exec.CommandContext(ctx, a.cfg.Cloudflared, "tunnel", "--no-autoupdate", "--protocol", protocol, "--url", fmt.Sprintf("http://127.0.0.1:%d", a.cfg.IngestPort))
 		pipe, e := cmd.StderrPipe()
 		if e == nil {
 			e = cmd.Start()

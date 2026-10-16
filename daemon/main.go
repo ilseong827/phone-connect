@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 type Config struct {
 	WebPort        int    `json:"webPort"`
@@ -38,6 +38,7 @@ type Config struct {
 	AutoTranscribe bool   `json:"autoTranscribe"`
 	Tunnel         bool   `json:"quickTunnel"`
 	Cloudflared    string `json:"cloudflared"`
+	TunnelProtocol string `json:"tunnelProtocol"`
 }
 type App struct {
 	dir      string
@@ -198,13 +199,15 @@ func links(dir string, c Config) map[string]any {
 	return map[string]any{"web": fmt.Sprintf("http://localhost:%d", c.WebPort), "mcp": fmt.Sprintf("http://127.0.0.1:%d/mcp", c.MCPPort), "phoneServer": external, "phoneServerReady": external != "", "note": "localhost web/MCP are private. The phone needs HTTPS to the ingest port."}
 }
 
-const help = `PocketRelay 1.0 — Ubuntu daemon, local web UI and read-only Dot MCP
+const help = `PocketRelay 1.1 — Ubuntu daemon, local web UI and read-only Dot MCP
 
 pocketrelay [start]             Start in background (default)
 pocketrelay stop | restart      Stop / restart
 pocketrelay --state [--json]    Status (aliases: status, --status, --sate)
 pocketrelay --link              Local web, phone HTTPS and MCP URLs
-pocketrelay pair                Show phone upload key (keep private)
+pocketrelay --pair              QR setup link, phone server and upload key (alias: pair)
+pocketrelay --check-link        Test public HTTPS access and upload authentication
+pocketrelay config --tunnel-protocol http2   Use TCP tunnel when UDP is unavailable
 pocketrelay logs [--lines 80]   Recent logs
 pocketrelay doctor             Environment and port checks
 pocketrelay config             Show redacted configuration
@@ -248,6 +251,9 @@ func main() {
 	status := f.Bool("status", false, "status")
 	sate := f.Bool("sate", false, "status alias")
 	link := f.Bool("link", false, "URLs")
+	pairFlag := f.Bool("pair", false, "QR setup link, phone server and upload key")
+	checkLink := f.Bool("check-link", false, "verify public HTTPS and authentication")
+	protocol := f.String("tunnel-protocol", "", "auto, http2 or quic")
 	h := f.Bool("help", false, "help")
 	v := f.Bool("version", false, "version")
 	urlFlag := f.String("url", "", "stable HTTPS ingest URL")
@@ -284,6 +290,12 @@ func main() {
 	if *link {
 		command = "links"
 	}
+	if *pairFlag {
+		command = "pair"
+	}
+	if *checkLink {
+		command = "check-link"
+	}
 	*dir, _ = filepath.Abs(*dir)
 	c, e := config(*dir, command == "init" || command == "start" || command == "config" || command == "restore" || command == "migrate")
 	must(e)
@@ -310,9 +322,9 @@ func main() {
 	case "links":
 		output(links(*dir, c))
 	case "pair":
-		s := links(*dir, c)
-		s["uploadKey"] = c.UploadKey
-		output(s)
+		output(pairing(*dir, c))
+	case "check-link":
+		output(checkPublic(*dir, c))
 	case "logs":
 		if managed(*dir) {
 			cmd := exec.Command("journalctl", "--user", "-u", "pocketrelay", "-n", fmt.Sprint(*lines), "--no-pager")
@@ -367,6 +379,12 @@ func main() {
 		}
 		if *cloudflared != "" {
 			c.Cloudflared = *cloudflared
+		}
+		if *protocol != "" {
+			if *protocol != "auto" && *protocol != "http2" && *protocol != "quic" {
+				must(errors.New("tunnel-protocol must be auto, http2 or quic"))
+			}
+			c.TunnelProtocol = *protocol
 		}
 		if *language != "" {
 			c.Language = *language

@@ -34,5 +34,5 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Compile and lint Android
-        run: bash gradlew :app:assembleDebug :app:lintDebug --console=plain
+        run: bash gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest --console=plain
       # CI debug APKs have a different signing key. Do not publish them as phone updates.

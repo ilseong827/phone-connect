@@ -1,4 +1,46 @@
-# PocketRelay Ubuntu 1.0
+# Phone Connect Ubuntu 1.1
+
+## QR로 휴대폰 연결하기 (v1.1)
+
+수신 서버 웹 화면 `http://localhost:8788`의 **⚙ 연결**을 눌러도 같은 QR 이미지가 바로 표시됩니다. 휴대폰 앱의 **서버 → QR로 연결 · 카메라 열기**로 이 QR을 찍으세요. 수동 방식은 앱의 **직접 입력**을 누르면 됩니다. 현재 Windows 수신 화면에도 이 구성을 적용했습니다.
+
+SSH나 Tailscale 없이 수신용 HTTPS 터널을 사용할 수 있습니다. 서버가 외부로 터널 연결을 만들고 휴대폰이 그 HTTPS 주소에 접속합니다. **구글 검색이 된다고 터널도 되는 것은 아닙니다.** Cloudflare Tunnel은 외부 7844 포트(QUIC는 UDP, HTTP/2는 TCP) 접근이 필요합니다. 아래 진단 결과로 실제 연결을 확인합니다.
+
+```bash
+# 압축을 푼 배포 폴더에서 최초 설치 또는 업데이트
+bash install.sh
+export PATH="$HOME/.local/bin:$PATH"
+bash install-tunnel.sh
+pocketrelay config --tunnel-protocol http2
+pocketrelay tunnel on
+pocketrelay restart
+pocketrelay --check-link
+pocketrelay --pair
+```
+
+터널 생성 직후에는 주소가 준비될 때까지 조금 기다렸다가 `--check-link`를 다시 실행합니다. `reachable: true`와 `authenticated: true`를 모두 확인하세요. `--pair`의 핵심 출력은 세 가지입니다.
+
+| 필드 | 용도 |
+|---|---|
+| pairLink | 외부 HTTPS 연결 설정 페이지. 열면 QR 코드가 표시됨 |
+| phoneServer | 휴대폰 앱에 저장할 실제 수신 서버 주소 |
+| uploadKey | 휴대폰 앱에 저장할 인증키 |
+
+추가 `localPairLink`는 같은 서버의 브라우저에서 QR 페이지를 여는 localhost 링크입니다. Dot에서 표시한 외부 `pairLink`는 사용자의 PC/휴대폰에서도 열 수 있습니다. 설정 페이지에는 QR과 앱 열기(휴대폰에서 링크를 직접 연 경우), APK 다운로드, 주소/키 복사가 있으며 웹 기록 조회 화면은 공개하지 않습니다.
+
+1. `pairLink`를 PC 또는 Dot의 브라우저에서 열어 QR을 화면에 띄웁니다.
+2. 휴대폰 앱의 **서버 → QR로 연결 · 카메라 열기**를 누릅니다.
+3. 휴대폰 카메라로 PC/Dot 웹페이지의 QR을 찍습니다. 서버 주소·인증키가 곧바로 앱에 입력됩니다. 휴대폰 웹페이지를 다시 열지 않습니다. 앱 v0.4.1 이상이 필요하며 Google Play 서비스의 스캐너를 사용합니다. 최초 스캔 시 모듈 다운로드가 필요할 수 있습니다.
+4. 앱의 서버 화면에 두 값이 자동 입력됩니다. 표시된 받을 서버를 확인하고 **이 서버로 연결**을 누르면 저장·전송이 켜집니다. QR을 열기만 해서는 기존 설정을 덮어쓰지 않습니다.
+5. 자동 실행이 지원되지 않는 카메라/브라우저에서는 페이지에 나온 두 값을 앱에 직접 입력합니다.
+
+QR 생성은 페이지 안에서 처리하며 외부 QR 생성 서비스에 인증키를 보내지 않습니다. 인증키는 링크의 `#` 뒤에 들어가 일반 HTTP 요청 경로와 쿼리에 포함되지 않습니다. 그래도 링크 자체와 QR은 인증 정보를 포함하므로 본인에게만 전달합니다. 쿼리 없는 `/pair` 페이지를 다른 사람이 열어도 서버 인증키를 받을 수 없습니다.
+
+**Dot에서 `--check-link`가 실패한다면:** DNS, 데몬 실행 상태, 외부 7844/TCP 허용 여부를 확인합니다. 그 포트가 환경 정책으로 차단되어 있으면 이 방식의 직접 수신은 불가능합니다. 이 경우 수신 서버를 외부 접속 가능한 본인 PC/VPS에 두고 Dot을 HTTPS 조회에 연결하거나, 해당 환경에서 허용하는 별도 중계 서비스를 구성해야 합니다. QR은 설정 입력을 편하게 해 주며 차단된 네트워크를 뚫지는 않습니다. 실제 Dot 컴퓨터에서는 별도 검증이 필요합니다.
+
+공식 네트워크 조건: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/configure-tunnels/tunnel-with-firewall/
+
+Quick Tunnel 주소는 재시작 후 바뀔 수 있습니다. 새 `--pair` QR로 다시 연결하거나 고정 HTTPS 도메인 터널을 구성하세요. 새 서버로 이전할 때는 기존 기록도 아래 이전 절차로 옮겨야 합니다.
 
 안드로이드의 내 기록을 받아 저장하고, 로컬 웹과 Dot의 읽기 전용 MCP 도구로 조회하는 Go 실행 파일입니다. 서버 실행에 Python, Go 설치는 필요 없습니다. 웹 녹음 재생에는 FFmpeg, 통화 내용 검색에는 whisper.cpp와 음성 인식 모델이 추가로 필요합니다.
 
@@ -38,7 +80,7 @@ pocketrelay restart
 pocketrelay pair
 ```
 
-`phoneServerReady: true`가 되면 `phoneServer`를 휴대폰 앱의 서버 주소에, `uploadKey`를 인증키에 넣습니다. 시작 직후 URL 생성에 시간이 걸리면 `pair`를 다시 실행합니다. Quick Tunnel 주소는 재시작 시 달라져 휴대폰 주소도 다시 입력해야 합니다. 장기간에는 고정 HTTPS 도메인을 127.0.0.1:8787에 프록시하고 다음과 같이 설정합니다.
+`addressConfigured: true`이고 `--check-link`의 `reachable`과 `authenticated`가 모두 `true`이면 `phoneServer`를 휴대폰 앱의 서버 주소에, `uploadKey`를 인증키에 넣습니다. 시작 직후 URL 생성에 시간이 걸리면 `pair`를 다시 실행합니다. Quick Tunnel 주소는 재시작 시 달라져 휴대폰 주소도 다시 입력해야 합니다. 장기간에는 고정 HTTPS 도메인을 127.0.0.1:8787에 프록시하고 다음과 같이 설정합니다.
 
 ```bash
 pocketrelay tunnel off
