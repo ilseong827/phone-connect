@@ -28,6 +28,16 @@ import (
 
 //go:embed web/*
 var webFiles embed.FS
+
+//go:embed dot-client.py
+var dotClient string
+
+func dotScript(url, key string) string {
+	data, _ := json.Marshal(map[string]string{"url": url, "readKey": key})
+	encoded := base64.StdEncoding.EncodeToString(data)
+	return strings.Replace(dotClient, "EMBEDDED_CONFIG = None  # PHONE_CONNECT_CONFIG", "EMBEDDED_CONFIG = json.loads(__import__(\"base64\").b64decode(\""+encoded+"\"))", 1)
+}
+
 var validID = regexp.MustCompile(`^[a-f0-9]{64}$`)
 var mediaLock sync.Mutex
 var acceptLock sync.Mutex
@@ -382,8 +392,11 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 			fail(w, 503, "Dot connection is still starting")
 			return
 		}
-		w.Header().Set("Content-Disposition", `attachment; filename="dot-reader.json"`)
-		respond(w, 200, map[string]string{"url": matches[len(matches)-1], "readKey": strings.TrimSpace(string(key))})
+		w.Header().Set("Content-Disposition", `attachment; filename="dot-reader.py"`)
+		w.Header().Set("Content-Type", "text/x-python; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		io.WriteString(w, dotScript(matches[len(matches)-1], strings.TrimSpace(string(key))))
 	case "/api/state":
 		respond(w, 200, a.state())
 	default:

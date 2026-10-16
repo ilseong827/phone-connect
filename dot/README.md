@@ -1,19 +1,21 @@
-# Dot · 외부 HTTPS 조회
+# Dot 연결 — 파일 하나로 실행
 
-Dot에는 서버를 설치하지 않습니다. 로컬 PC의 Podman 컨테이너에 저장된 기록을 조회합니다.
-
-1. PC에서 컨테이너를 시작합니다. 웹 `http://localhost:8788` → **연결 → Dot 연결 파일 다운로드**.
-2. 받은 `dot-reader.json`을 Dot에 비공개로 전달합니다. 인증키가 있으므로 공개 저장소에 올리지 않습니다.
-3. Dot에 [SETUP.txt](SETUP.txt)의 지시문과 저장소 링크를 전달합니다.
-4. Dot이 아래 상태 조회와 실제 기록 조회에 성공하는지 확인합니다.
+PC 웹의 **연결 → Dot 연결 파일 다운로드 (.py)**에서 `dot-reader.py`를 받으세요.
+서버 주소, 읽기 전용 인증키, 조회 코드, 사용법이 모두 들어 있습니다.
+이 파일 하나를 Dot에 비공개로 전달하고 실행을 요청하면 됩니다. GitHub에서 코드를 추가로 받을 필요가 없습니다.
 
 ```bash
-python3 client.py --config dot-reader.json relay_status
-python3 client.py --config dot-reader.json search_messages --query 일정
-python3 client.py --config dot-reader.json list_recordings
-python3 client.py --config dot-reader.json get_transcript --id RECORD_ID
+python3 dot-reader.py
+python3 dot-reader.py search_messages --query 일정
+python3 dot-reader.py list_recordings
+python3 dot-reader.py get_transcript --id RECORD_ID
+python3 dot-reader.py --help
 ```
 
-`client.py`는 Python 표준 라이브러리만 사용하며 HTTP/HTTPS 프록시 환경변수를 따릅니다. 서버·터널·apt·pip 설치가 필요 없습니다. SOCKS 전용 환경은 지원하지 않습니다. 이 도구는 Dot이 명령으로 호출하는 조회 클라이언트이며 계정에 등록된 Gmail 플러그인과 동일한 설치 방식은 아닙니다.
+옵션 없이 실행하면 연결 상태를 조회합니다. Python 3.8 이상과 기본 라이브러리만 사용하며 pip/apt 설치는 필요 없습니다.
+PC 서버가 켜져 있고 HTTPS 주소에 접근할 수 있어야 합니다. 임시 주소가 바뀌면 파일을 다시 다운로드하세요.
+이 파일은 인증키를 포함하므로 공개 저장소나 로그에 올리지 마세요. 인코딩은 암호화가 아닙니다.
+HTTP/HTTPS 프록시를 따르며 SOCKS 전용 환경은 지원하지 않습니다.
+실제 Dot 환경에서의 최종 연결 검증은 별도입니다. 자동 플러그인 등록이나 상시 실행 기능은 아닙니다.
 
-실제 Dot 환경에서의 최종 테스트는 별도입니다. 임시 터널 주소가 바뀌면 웹에서 설정 파일을 다시 받아 전달합니다. 전사 완료 전에는 통화 내용을 추측하지 않습니다.
+개발용 `client.py`는 연결 정보가 없는 원본입니다. 기존 방식인 `python3 client.py --config dot-reader.json relay_status`도 지원합니다.
