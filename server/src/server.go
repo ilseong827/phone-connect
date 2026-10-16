@@ -86,8 +86,12 @@ func serve(dir string, c Config) error {
 			l.Close()
 		}
 	}()
+	bind := "127.0.0.1"
+	if os.Getenv("POCKETRELAY_CONTAINER") == "1" {
+		bind = "0.0.0.0" // Compose publishes the viewer to host loopback only.
+	}
 	for _, p := range ports {
-		l, e := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
+		l, e := net.Listen("tcp", fmt.Sprintf("%s:%d", bind, p))
 		if e != nil {
 			return e
 		}
@@ -370,6 +374,16 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 	case "/api/connection":
 		l := links(a.dir, a.cfg)
 		respond(w, 200, map[string]any{"url": l["phoneServer"], "token": a.cfg.UploadKey})
+	case "/api/dot-connection":
+		key, e := os.ReadFile(filepath.Join(a.dir, "reader.key"))
+		logBytes, logError := os.ReadFile(filepath.Join(a.dir, "reader-tunnel.log"))
+		matches := regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`).FindAllString(string(logBytes), -1)
+		if e != nil || logError != nil || len(matches) == 0 {
+			fail(w, 503, "Dot connection is still starting")
+			return
+		}
+		w.Header().Set("Content-Disposition", `attachment; filename="dot-reader.json"`)
+		respond(w, 200, map[string]string{"url": matches[len(matches)-1], "readKey": strings.TrimSpace(string(key))})
 	case "/api/state":
 		respond(w, 200, a.state())
 	default:

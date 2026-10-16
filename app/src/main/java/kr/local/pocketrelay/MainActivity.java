@@ -83,6 +83,9 @@ public class MainActivity extends Activity {
         wifi=new Switch(this);wifi.setText("Wi-Fi에서만 전송");wifi.setChecked(prefs.getBoolean("wifi",true));manualConnection.addView(wifi);
         button(manualConnection,"연결 · 저장하고 전송 켜기",()->saveServer());
         button(network,"전송 일시 중지",()->{prefs.edit().putBoolean("upload",false).apply();refresh();});
+        button(network,"현재 서버로 다시 동기화",()->new AlertDialog.Builder(this).setTitle("문자·녹음을 다시 보낼까요?")
+            .setMessage("현재 선택한 기간의 문자·MMS·녹음과 연락처 이름을 이 서버로 다시 보냅니다. 원본이 휴대폰에 있어야 합니다. 이미 저장된 기록은 서버가 중복을 제거합니다. 이전에 전송한 카톡 본문과 공유 파일은 기존 서버에서 이전해야 합니다.")
+            .setPositiveButton("다시 동기화",(d,w)->executor.execute(()->{try{ServerSync.save(this,prefs.getString("url",""),Secrets.read(this),prefs.getBoolean("wifi",true),true);SyncJob.run(this);}catch(Exception e){prefs.edit().putString("status","다시 동기화 실패: "+e.getMessage()).apply();}runOnUiThread(this::refresh);})).setNegativeButton("취소",null).show());
         button(network,"지금 확인하고 전송",()->{
             status.setText("파일과 전송 대기열을 확인 중입니다…");
             executor.execute(()->{try{SyncJob.run(this);}catch(Exception e){prefs.edit().putString("status","전송 대기 · "+e.getMessage()).apply();}runOnUiThread(this::refresh);});
@@ -149,7 +152,9 @@ public class MainActivity extends Activity {
     void saveServer(){try{
         String url=server.getText().toString().trim();Transport.endpoint(url);
         String key=token.getText().toString().trim();if(key.isEmpty())key=Secrets.read(this);if(key.length()<16||key.contains("\n")||key.contains("\r"))throw new Exception("인증키는 줄바꿈 없이 16자 이상 입력하세요.");
-        Secrets.save(this,key);prefs.edit().putString("url",url).putBoolean("wifi",wifi.isChecked()).putBoolean("upload",true).apply();token.setText("");SyncJob.schedule(this,false);refresh();toast("저장했습니다.");
+        final String nextKey=key;final boolean nextWifi=wifi.isChecked();
+        status.setText("서버 연결과 동기화 상태를 변경하고 있습니다…");
+        executor.execute(()->{try{ServerSync.save(this,url,nextKey,nextWifi,false);runOnUiThread(()->{token.setText("");refresh();toast("저장했습니다. 새 서버이면 문자·녹음을 다시 동기화합니다.");});}catch(Exception e){runOnUiThread(()->toast(e.getMessage()));}});
     }catch(Exception e){toast(e.getMessage());}}
     void preview(int count){
         String folder=selectedFolder.isEmpty()?prefs.getString("folder",""):selectedFolder;if(folder.isEmpty()){toast("먼저 녹음 폴더를 선택하세요.");return;}

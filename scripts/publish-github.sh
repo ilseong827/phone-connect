@@ -19,7 +19,7 @@ login=$(gh api user --jq .login)
 uid=$(gh api user --jq .id)
 git config user.name "$login"
 git config user.email "$uid+$login@users.noreply.github.com"
-git add .gitignore .gitattributes .github scripts GITHUB.md README.md VALIDATION.md app/src app/build.gradle gradle gradlew gradlew.bat build.gradle settings.gradle gradle.properties daemon receiver
+git add .gitignore .gitattributes .github scripts GITHUB.md README.md VALIDATION.md app/src app/build.gradle gradle gradlew gradlew.bat build.gradle settings.gradle gradle.properties server dot phone-connect.ps1 .containerignore
 if git diff --cached --name-only | grep -E '(^|/)(\.tools|receiver-data|local\.properties|config\.json|pc-session\.json)(/|$)|\.(sqlite3|audio|blob|jks|keystore|pem|key)$'; then
   echo 'Private files staged; aborting' >&2; exit 1
 fi

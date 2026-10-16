@@ -1,0 +1,12 @@
+*
+!server/
+!server/src/
+!server/src/**
+!server/container/
+!server/container/entrypoint.sh
+!server/container/connect.sh
+!server/Containerfile
+server/src/pocketrelay
+**/*.key
+**/config.json
+**/*.sqlite3*

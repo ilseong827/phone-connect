@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, parse_qs, quote
 from audio_preview import prepare
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / 'receiver-data'
 
 def audio_mime(head):

@@ -17,7 +17,14 @@ dist/
 *.keystore
 *.pem
 *.key
+dot-reader.json
 config.json
 pc-session.json
 *.log
 daemon/pocketrelay
+
+/receiver/
+/server/src/pocketrelay
+
+/phone-connect-data/
+/receiver

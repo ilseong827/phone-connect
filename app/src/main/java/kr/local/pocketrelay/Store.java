@@ -9,7 +9,8 @@ import java.security.MessageDigest;
 
 public class Store extends SQLiteOpenHelper {
     final java.io.File payloadDir;
-    public Store(Context c) { super(c, "relay.db", null, 1); payloadDir=new java.io.File(c.getFilesDir(),"pending"); }
+    public Store(Context c) { this(c,"relay.db"); }
+    Store(Context c,String name) { super(c, name, null, 1); payloadDir=new java.io.File(c.getFilesDir(),name.equals("relay.db")?"pending":"test-pending"); }
     public void onCreate(SQLiteDatabase d) {
         d.execSQL("CREATE TABLE queue(id TEXT PRIMARY KEY, kind TEXT NOT NULL, payload TEXT NOT NULL, uri TEXT, sent INTEGER DEFAULT 0, attempted INTEGER DEFAULT 0, created INTEGER NOT NULL)");
         d.execSQL("CREATE TABLE files(uri TEXT PRIMARY KEY, size INTEGER, modified INTEGER, stable_since INTEGER)");
@@ -59,6 +60,12 @@ public class Store extends SQLiteOpenHelper {
         getWritableDatabase().insertWithOnConflict("files",null,v,SQLiteDatabase.CONFLICT_REPLACE);return false;
     }
     boolean exists(String id) {try(Cursor r=getReadableDatabase().rawQuery("SELECT 1 FROM queue WHERE id=?",new String[]{id})){return r.moveToFirst();}}
+    int resetRecoverableSent(){
+        // Keep unsent payloads and notification tombstones. SMS/MMS and original
+        // recordings can be reconstructed from their providers on the next scan.
+        return getWritableDatabase().delete("queue","sent=1 AND kind IN ('sms','recording','contacts')",null);
+    }
+    boolean hasPending(){try(Cursor r=getReadableDatabase().rawQuery("SELECT 1 FROM queue WHERE sent=0 LIMIT 1",null)){return r.moveToFirst();}}
     String counts() {
         try(Cursor r=getReadableDatabase().rawQuery("SELECT kind,sent,count(*) FROM queue GROUP BY kind,sent",null)) {
             StringBuilder s=new StringBuilder(); while(r.moveToNext())s.append(r.getString(0).equals("kakao")?"카톡":r.getString(0).equals("sms")?"문자":r.getString(0).equals("file")?"파일":r.getString(0).equals("contacts")?"연락처 이름":"녹음").append(r.getInt(1)==1?" 전송 완료 ":" 대기 ").append(r.getInt(2)).append("건\n");return s.length()==0?"아직 수집된 기록이 없습니다.":s.toString();

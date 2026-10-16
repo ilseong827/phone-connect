@@ -1,184 +1,61 @@
 # Phone Connect
 
-**Connect your messages and call recordings to Dot & Web.**
+**내 휴대폰의 카카오톡·문자·통화 녹음을 PC에 보관하고 Dot에서 조회합니다.**
 
-[설치 파일 다운로드 (Releases)](https://github.com/ilseong827/phone-connect/releases/latest) · 공개 저장소이며 로그인 없이 소스와 설치 파일을 받을 수 있습니다.
+[설치 파일](https://github.com/ilseong827/phone-connect/releases/latest) · [Podman 실행 안내](server/container/README.md) · [Dot 연결](dot/README.md) · [Android 앱](app/README.md)
 
-내 휴대폰의 카카오톡 수신 알림·문자·통화 녹음을 로컬 웹과 Dot에 연결합니다. 서버 실행 명령은 기존 호환성을 위해 `pocketrelay`를 사용합니다.
-
-v1.1: `pocketrelay --pair`로 **QR 연결 페이지 링크·서버 주소·인증키**를 확인합니다. Android v0.4.1부터 앱의 서버 → QR로 연결 버튼으로 PC/Dot 웹페이지의 QR을 찍으면 주소/키가 바로 입력됩니다. `pocketrelay --check-link`는 외부 HTTPS 접속과 인증키를 실제 검증합니다. SSH 없이 수신할 수 있지만 터널용 외부 네트워크 연결은 허용되어야 합니다.
-
-- [GitHub에서 내려받기·설치·배포](GITHUB.md)
-- [Ubuntu 설치와 Dot 연결](daemon/README-UBUNTU.md)
-
-
-## Dot에 설치를 요청할 때
-
-이 저장소는 **공개**입니다. Dot에 아래 저장소 링크와 요청문을 전달하면 GitHub 로그인 없이 소스와 최신 설치 파일을 받을 수 있습니다.
-
-> 이 저장소의 README.md, GITHUB.md, daemon/README-UBUNTU.md, daemon/DOT-SETUP.txt를 읽고 최신 Releases의 패키지를 내 Ubuntu 컴퓨터에 설치해 줘. 백그라운드 실행과 로컬 웹 8788을 확인하고, 외부 수신 연결을 검증한 뒤 휴대폰 연결 QR 페이지 링크를 보여줘. 이어서 읽기 전용 MCP를 연결하고 실제 조회까지 테스트해 줘. 환경에서 막히는 단계는 성공했다고 하지 말고 알려줘.
-
-설치 순서: 최신 릴리스 다운로드·체크섬 확인 → 네이티브 서버 설치 → HTTPS 터널 검사 → QR 연결 → Dot MCP 연결·실제 조회. 상세 명령은 위 설치 문서를 따릅니다. 아래 Android/Windows 설명에는 이전 버전의 변경 이력이 포함되어 있습니다.
-
-## Android · 내 기록 보내기
-
-삼성 안드로이드폰의 **본인 카카오톡 알림**과 **선택한 녹음 폴더의 오디오 파일**을 사용자가 지정한 HTTPS 서버로 전달하는 개인용 앱입니다. Android 9 이상이 필요합니다. 카카오 로그인이나 카카오 계정 비밀번호를 요구하지 않습니다.
-
-## 설치와 첫 실행
-
-1. `dist/PocketRelay-debug.apk`를 휴대폰으로 옮겨 설치합니다. 개인 테스트용 디버그 서명 APK입니다.
-2. 앱에서 **카카오톡 알림 접근 허용**을 눌러 권한을 허용하고 **새 카톡 알림 수집**을 켭니다. 일부 삼성/Android 버전에서 직접 설치한 앱의 알림 접근이 제한되면 앱 정보의 메뉴에서 **제한된 설정 허용**을 먼저 선택해야 할 수 있습니다.
-3. Voice Recorder 또는 통화 녹음 파일이 실제로 저장된 폴더를 선택합니다. 모든 파일 접근이나 마이크 권한은 요구하지 않습니다.
-4. 기존 녹음 제외 / 최근 1·2·4주 / 직접 주 수 입력 중 선택합니다. 파일 수·용량을 확인하고 시작합니다. 이후에는 같은 폴더와 하위 폴더의 새 오디오도 대상입니다.
-5. 서버를 아직 준비하지 않았다면 주소를 비워 둡니다. 카톡 수집과 녹음 목록 확인은 먼저 사용할 수 있습니다. **전송 대기 기록 보기**에서 수집 여부를 확인합니다.
-6. 수신 서버가 준비되면 HTTPS 기본 주소와 16자 이상의 인증키를 입력하고 저장합니다. 기본값은 Wi-Fi에서만 전송입니다.
-
-## 실제 동작과 한계
-
-- 카톡은 알림 접근 허용 후 수집 스위치를 켠 시점부터 들어오는 알림만 읽습니다. 과거 대화, 사진 원본, 알림이 발생하지 않은 메시지는 가져오지 않습니다.
-- MessagingStyle 알림이면 발신자·대화방·메시지 시각을 추출합니다. 일반 알림의 제목이 발신자인지 방 이름인지 단정하지 않고 `notificationTitle`로 보존하며 불확실한 필드는 `null`로 전송합니다. 실제 삼성/카카오톡 버전에서 확인이 필요합니다.
-- `receivedAt`은 Android 알림 게시 시각, `messageTime`은 알림 내 메시지 시각(없으면 게시 시각)입니다. 모든 시각은 Unix epoch 밀리초입니다.
-- 녹음의 최초 기간은 **파일 수정 시각** 기준입니다. 실제 통화 시작 시각과 다를 수 있습니다. `recordedAt`은 추측하지 않고 `null`, 파일 수정 시각은 `fileModifiedAt`으로 별도 보냅니다. 오디오 길이는 읽을 수 있을 때만 전달합니다.
-- 날짜를 제공하지 않는 파일은 자동 기간 판정에서 제외하고 개수를 표시합니다.
-- 녹음은 약 15분 주기로 스캔합니다. Android 절전 정책에 따라 늦어질 수 있으며 실시간 전송을 보장하지 않습니다. 앱 강제 종료 후에는 다시 실행해야 합니다.
-- 두 번의 스캔에서 크기·수정 시각이 같고 1분 이상 경과한 파일을 준비 완료로 판단합니다. 이는 파일 완성을 추정하는 방식입니다. 전송 직전 크기와 수정 시각도 재검사합니다.
-- 최초 스캔 후 다음 스캔에서 전송될 수 있습니다. **지금 확인하고 전송**을 누르고 1분 후 다시 눌러 빠르게 시험할 수 있습니다.
-- 전송 전 녹음 원본을 삭제하거나 이동하면 보내지 못합니다. 이 앱은 녹음을 별도로 복제하지 않으며 원본을 삭제하지 않습니다.
-- 카톡 대기 본문은 앱 전용 SQLite에 저장됩니다. 서버의 저장 확인 후 본문을 지우고 중복 방지용 ID만 유지합니다. 녹음 전송 완료 ID도 유지합니다.
-- 인증키는 Android Keystore의 AES-GCM 키로 암호화합니다. 앱 백업과 평문 HTTP는 비활성화했고 HTTPS 리디렉션도 따르지 않습니다.
-- 새 서버로 주소를 바꿔도 이미 전송 완료된 기록을 자동 재전송하지 않습니다.
-- 통화 직접 녹음은 포함하지 않습니다. Ubuntu 서버는 선택적 로컬 전사와 Dot용 읽기 전용 MCP를 제공합니다. 실제 Dot 계정 연결은 별도 설정·검증이 필요합니다.
-
-## 수신 프로토콜
-
-PC, 별도 서버, Dot 연동 도구 중 어디서든 동일한 규격을 구현할 수 있습니다. 기본 URL 끝에 다음 경로를 붙입니다.
-
-| 경로 | 요청 |
-| --- | --- |
-| `POST /v1/events` | 카톡 이벤트 JSON |
-| `POST /v1/recordings` | multipart: `metadata` JSON + `file` 원본 바이트 |
-
-공통 헤더:
+## 구조
 
 ```text
-Authorization: Bearer <사용자 인증키>
-Idempotency-Key: <64자리 이벤트 ID>
+app/                 Android 앱 (src/main, src/test, src/androidTest)
+server/
+  src/               Go 수신 서버·웹·조회 API
+  container/         단일 컨테이너 자동 시작·연결 안내
+  legacy-windows/    기존 Windows 수신 서버 (이전·호환용)
+  Containerfile      FFmpeg·whisper.cpp·모델·터널 포함 이미지
+  run.sh             Podman 시작·중지 도우미
+dot/                 외부 HTTPS 조회 클라이언트·Dot 지시문
+scripts/             배포 도구
 ```
 
-카톡 예:
+휴대폰 → **로컬 PC의 Podman 컨테이너 하나** → 로컬 웹 / Dot의 HTTPS 조회.
+Dot의 제한된 샌드박스에 수신 서버를 설치하지 않습니다. Compose는 필요 없습니다.
 
-```json
-{
-  "schemaVersion": 1,
-  "id": "64자리 SHA-256 이벤트 ID",
-  "type": "kakao",
-  "sender": "발신자",
-  "chatRoom": "방 이름 또는 null",
-  "message": "메시지",
-  "receivedAt": 1792100000000,
-  "messageTime": 1792100000000,
-  "capturedAt": 1792100000100,
-  "notificationTitle": "원래 알림 제목",
-  "source": "messagingStyle"
-}
+## 실행
+
+이미지를 준비한 뒤 최초 한 번:
+
+```bash
+podman run -d --name phone-connect --restart=unless-stopped \
+  -p 127.0.0.1:8788:8788 \
+  -v "$(pwd)/phone-connect-data:/data" \
+  localhost/phone-connect:1.2.0
 ```
 
-녹음 metadata: `schemaVersion`, `id`, `type: recording`, `fileName`, `mimeType`, `size`, `fileModifiedAt`, `recordedAt: null`, `durationMs`(읽을 수 없으면 null), `discoveredAt`.
+이후에는 **Podman의 시작 버튼** 또는 `podman start phone-connect`만 사용합니다. 수신·웹·조회 API·터널·자동 전사가 함께 시작됩니다. 컨테이너에 들어가 명령을 입력할 필요가 없습니다.
 
-서버는 **영구 저장 완료 후에만** 아래 JSON과 HTTP 2xx를 반환해야 합니다. 중복 ID도 같은 응답을 반환합니다. 단순 200, 리디렉션, ID 불일치, 인증 오류는 완료로 처리하지 않습니다. 파일 요청은 chunked 전송을 지원해야 합니다.
+- PC 웹: **http://localhost:8788**
+- 웹 **연결 → 휴대폰 QR**: 앱에서 스캔하여 서버 주소·인증키 입력
+- 웹 **연결 → Dot 연결 파일 다운로드**: 비공개로 Dot에 전달하고 [연결 지시문](dot/SETUP.txt) 사용
+- 데이터: PC의 `phone-connect-data/` 바인드 마운트 폴더. 컨테이너를 삭제해도 PC의 마운트 폴더를 지우지 않으면 기록은 남습니다.
 
-```json
-{"accepted": true, "id": "요청과 동일한 이벤트 ID"}
-```
+소스 빌드와 Windows/WSL 시작 방법은 [서버 안내](server/container/README.md)를 따릅니다. 컨테이너 안에 음성 도구와 한국어 지원 base 모델을 포함하므로 호스트에서 FFmpeg·빌드 도구를 설치할 필요가 없습니다.
 
-## 참고 수신 서버 및 테스트
+## 운영 조건
 
-### 현재 PC에서 연결 시험
+PC와 Podman/WSL이 실행 중이어야 수신됩니다. 절전·종료 상태에서는 수신할 수 없습니다. 재시작 정책이 PC 전원이나 Windows 시작을 대신하지는 않습니다.
 
-PC 수신함은 `receiver/chat_viewer.py`와 `chat.html`, `chat.js`를 사용합니다. 대화 목록/말풍선/날짜 구분/검색을 제공하고 3초마다 새 기록을 확인합니다. 녹음 탭은 원본 재생을 유지합니다. 채팅방 이름이 없으면 알림 제목으로 묶고 미확인임을 표시합니다. 같은 이름의 별도 채팅방은 현재 수집 정보만으로 구별할 수 없습니다. 발신 메시지 전송 및 과거 대화 가져오기는 아직 포함하지 않습니다.
+기본 무료 Quick Tunnel은 재시작 시 URL이 바뀔 수 있습니다. 이 경우 웹에서 휴대폰 QR과 Dot 연결 파일을 다시 받습니다. 고정 주소 운영에는 별도 도메인·터널 설정이 필요합니다.
 
-`receiver/start-pc.ps1`은 로컬 수신 서버(8787), PC 전용 수신함(8788), Cloudflare 임시 HTTPS 터널을 숨김 프로세스로 실행합니다. `.tools`의 Python과 공식 cloudflared 실행 파일이 필요합니다. `receiver/stop-pc.ps1`로 해당 세션만 종료할 수 있으며 수신 자료는 유지합니다.
+Dot 조회키는 휴대폰 업로드키와 분리돼 있습니다. 관리 웹과 기존 MCP 포트는 외부 터널에 연결하지 않습니다. 실제 Dot에서 조회 성공 여부는 별도로 확인해야 합니다.
 
-- PC 수신함: `http://127.0.0.1:8788` — 수신 주소 및 인증키 확인, 받은 메시지 보기, 녹음 재생
-- 임시 공개 주소의 `/app.apk`: 현재 테스트 APK 다운로드
-- 외부에서는 기록 조회와 인증키 조회를 제공하지 않습니다. 업로드에는 인증키가 필요합니다.
-- 연결 설정과 프로세스 ID는 `.tools/pc-session.json`에 저장됩니다. 이 파일은 인증키가 포함되므로 공유하지 마세요.
-- 임시 주소는 재실행 시 바뀌며, 실행 중인 PC가 온라인이어야 합니다. Cloudflare를 통해 전송되는 테스트 연결입니다.
-- `receiver/check_pc.py`는 실제 HTTPS 경로로 가짜 메시지·무음 WAV를 전송해 검사하고 자체 테스트 데이터만 제거합니다.
+카톡은 수신 알림 기반이며 발신 카톡·전체 과거 대화·모든 첨부 원본을 자동으로 가져오지는 못합니다. SMS/MMS 송수신을 지원하고 RCS는 제외합니다. 녹음 내용은 전사 완료 후 조회되며 음성 인식 오류가 있을 수 있습니다.
 
-`receiver/receiver.py`는 Python 표준 라이브러리만 사용하는 로컬 규격 확인용 서버입니다. 127.0.0.1:8787에서만 수신합니다. 휴대폰 연결에는 별도로 HTTPS 프록시/호스팅이 필요합니다. 공개 운영용 서버로 배포한 상태가 아닙니다. 파일당 512MiB 제한이며 녹음 요청을 메모리에 읽으므로 대량 운영용 구현은 스트리밍 저장으로 교체해야 합니다.
+## 개발·검증
 
-```powershell
-$env:RELAY_TOKEN = '<임의의 긴 인증키>'
-python receiver/receiver.py
-python -m unittest discover -s receiver -v
-```
+- Android: `./gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest`
+- 서버: `cd server/src && go test ./... && go vet ./...`
+- 컨테이너 빌드: `podman build -t localhost/phone-connect:1.2.0 -f server/Containerfile .`
+- [검증 이력](VALIDATION.md) · [네이티브 Ubuntu 설치](server/src/README-UBUNTU.md)
 
-수신 자료는 `receiver-data/events.sqlite3`와 이벤트 ID 기반 `.audio` 파일로 저장됩니다. 원래 파일명과 MIME은 DB에 보관하며 경로로 직접 사용하지 않습니다.
-
-## 빌드
-
-JDK 17, Android SDK platform 35 / build-tools 35.0.0을 사용합니다. Android Studio에서 프로젝트를 열거나 `local.properties`에 SDK 경로를 지정한 후:
-
-```powershell
-.\gradlew.bat :app:assembleDebug :app:lintDebug
-```
-
-현재 작업 폴더에는 빌드용 JDK/SDK/Gradle을 `.tools`에 별도로 준비했습니다. 시스템 PATH는 변경하지 않았습니다.
-
-## 휴대폰 확인 순서
-
-1. 서버 설정 없이 카톡 수집을 켜고 다른 기기에서 본인에게 테스트 메시지를 보냅니다.
-2. **전송 대기 기록 보기**에서 1:1/그룹 채팅의 제목·발신자·본문을 확인합니다. 숨김 알림도 확인합니다.
-3. 실제 녹음 폴더를 선택하고 최근 1주를 미리 봅니다. 작은 새 녹음을 저장한 뒤 두 차례 확인합니다.
-4. HTTPS 수신 서버 연결 후 카톡/녹음의 저장 확인과 대기열 감소를 확인합니다.
-5. 비행기 모드에서 수집한 후 연결 복구, 재전송, 중복 저장 방지, 재부팅 후 동작을 확인합니다.
-
-검증 이력은 [VALIDATION.md](VALIDATION.md)를 확인하세요. 장기 백그라운드 동작은 기기 절전 정책에 따라 달라집니다.
-
-
-## v0.2 업데이트 · 문자와 사진
-
-- 휴대폰 왼쪽 메뉴: 상태 / 카카오톡 / 문자 / 녹음 / 서버.
-- 문자 메뉴에서 문자 읽기 권한을 허용한 뒤 처음 가져올 기간을 선택하고 ‘문자 개수 확인 후 시작’을 누릅니다. 이후 문자함 변경 감지와 주기적 작업으로 동기화합니다. 절전 시 지연될 수 있습니다.
-- 시스템 SMS/MMS 문자함에 저장된 수신·발신을 지원합니다. PC 문자 화면은 받은 메시지를 왼쪽, 보낸 메시지를 오른쪽에 표시합니다. 배달·읽음 확인이나 문자 발송 기능은 아닙니다.
-- MMS 사진은 메시지당 3개, 사진당 8MiB까지 전송합니다. 초과 및 읽기 실패는 미지원 첨부로 표시합니다. RCS 채팅·RCS 사진은 지원하지 않습니다.
-- 카카오톡 사진은 알림에서 접근 가능한 이미지 URI나 큰 사진 미리보기가 제공될 때만 수집합니다. ‘사진을 보냈습니다’라는 텍스트만 제공되는 알림의 원본은 가져올 수 없습니다. 과거 사진과 카카오톡 발신 내역도 자동 수집되지 않습니다.
-- 이미지의 지원 형식: JPEG, PNG, GIF, WebP, HEIC/HEIF. HEIC/HEIF는 브라우저에 따라 표시되지 않아 파일을 별도로 열어야 합니다.
-- PC 서버는 이미지 원본 바이트를 저장하며, 이미지 열람은 localhost:8788에서만 제공합니다. JSON의 Base64는 저장 시 이미지 파일 참조로 바뀝니다.
-- 큰 첨부가 든 휴대폰 대기 이벤트는 앱 전용 파일에 보관해 SQLite 행 크기 제한을 피합니다. 서버 저장 확인 후 대기 파일을 제거합니다.
-
-설치 파일: `dist/PocketRelay-debug.apk` (0.2.0). 기존 앱을 삭제하지 말고 업데이트 설치하세요. USB 연결 후 프로젝트 폴더에서 실행:
-
-```powershell
-& .tools/android-sdk/platform-tools/adb.exe install -r dist/PocketRelay-debug.apk
-```
-
-PC 확인 화면: http://127.0.0.1:8788/ . 이번 업데이트에서 기존 서버 주소·인증키를 유지했습니다.
-
-
-## v0.3 · 모든 형식 첨부와 주소록 이름 (v0.2 제한 변경)
-
-- `image/`처럼 불완전한 MIME 형식도 실제 파일 헤더로 판별합니다. GIF 애니메이션 바이트를 변환하지 않습니다. 카카오톡 알림이 제공한 파일 자체가 미리보기라면 원본으로 바꿀 수 없습니다.
-- 형식 제한 없이 파일을 저장하고 다운로드합니다. GIF/JPEG/PNG/WebP는 미리보기, 지원되는 MP4/WebM 및 오디오는 브라우저 재생, PDF/Word/Excel/기타는 다운로드입니다. 코덱에 따라 영상 재생이 안 되면 원본을 다운로드하세요.
-- 자동 수집은 카카오톡 알림에 접근 가능한 파일 URI가 있을 때 가능합니다. 모든 카카오톡 첨부의 자동 수집을 보장하지 않습니다. 제공되지 않은 파일은 해당 앱에서 다운로드 후 **공유 → 내 기록 보내기 → 내 PC로 보내기**를 사용합니다. 파일만 공유되므로 원래 채팅방·발신자·원래 시각을 임의로 기록하지 않고 PC ‘파일’에 공유 시각으로 보관합니다.
-- 원본 첨부는 파일당 100MiB, MMS/공유는 한 번에 10개까지입니다. 알림 미리보기의 기존 Base64 프로토콜은 8MiB까지 호환합니다. 사진·영상 원본은 앱 전용 임시 파일에 복사하고 SHA-256 검증을 거쳐 스트리밍 전송합니다. 성공 후 참조가 없는 임시 원본은 다음 동기화에서 1시간 유예 후 정리합니다.
-- `POST /v1/attachments/{sha256}` 인증 스트리밍 업로드 후 `/v1/events`에 `fileId`, `fileName`, `mimeType`, `size`, `source`를 기록합니다. `imageId` 구형 기록도 열람합니다. PC 파일 열람은 localhost 전용 `/file/{id}`, 미리보기 `?preview=1`, 영상 HTTP Range 지원입니다. 문서·실행형 콘텐츠는 웹 실행 없이 다운로드합니다.
-- **문자 → 주소록 이름 연결 · 연락처 권한**에서 허용하면 선택한 문자 기간에 등장하는 번호의 주소록 이름만 전송합니다. 전체 주소록을 일괄 전송하지 않습니다. PC 목록·말풍선은 이름, 대화 제목 아래는 번호를 표시하며 기존 문자에도 반영됩니다. 미등록·권한 미허용은 번호로 표시합니다. 이름 변경은 다음 문자 동기화에서 반영합니다.
-- 이름 동기화는 `contacts` 이벤트의 `deviceId`와 `entries[{address,displayName}]`를 사용합니다. 발신 문자에는 계속 ‘나’를 표시합니다. 카카오톡 발신자는 카카오톡 알림 이름을 유지합니다.
-- v0.2 서버가 `Unsupported image format`으로 버린 파일 바이트는 복구할 수 없습니다. 이전 실패 파일은 다시 공유해야 합니다.
-
-## 웹 녹음 재생 호환성 보완
-
-기본 웹 재생은 원본 코덱에 의존하지 않도록 `/audio/{id}?format=wav`로 변경했습니다. 서버가 첫 재생 시 로컬 FFmpeg로 16비트 PCM WAV를 만들고 `receiver-data/{id}.playback.wav`에 캐시합니다. 원본 샘플레이트·채널을 유지하며 원본 파일은 수정하지 않습니다. 긴 녹음은 첫 변환에 시간이 걸리고 캐시만큼 추가 디스크 공간이 필요합니다. 다운로드 링크는 계속 원본 파일입니다.
-
-변환 도구는 `.tools/ffmpeg.exe`가 필요합니다. 현재 PC에는 공식 imageio-ffmpeg 프로젝트의 PyPI 0.6.0 Windows wheel에 포함된 실행 파일을 설치했고 PyPI SHA-256을 검증했습니다. 배포 출처: https://pypi.org/project/imageio-ffmpeg/0.6.0/ . 원본 녹음은 외부 변환 서비스로 보내지 않습니다.
-# Ubuntu 네이티브 서버 / Dot 연결
-
-새 서버는 `daemon/`에 구현했습니다. Python 없이 실행되는 Go 바이너리이며 로컬 웹 기본 주소는 `http://localhost:8788`입니다.
-
-- 배포: `dist/pocketrelay-linux-amd64.tar.gz`, `dist/pocketrelay-linux-arm64.tar.gz`
-- 설치·이전·명령·전사·Dot 연결: [Ubuntu 안내](daemon/README-UBUNTU.md)
-- Dot에게 전달할 설치 지시문: [DOT-SETUP.txt](daemon/DOT-SETUP.txt)
-- 기존 Android APK 및 아래 Windows 수신 서버와 호환됩니다. 현재 Windows 서버와 개인 데이터는 자동 이전하거나 변경하지 않습니다.
-
+소스와 릴리스는 공개입니다. 실제 메시지·녹음·주소록·인증키·개인 설정은 포함하지 않습니다.

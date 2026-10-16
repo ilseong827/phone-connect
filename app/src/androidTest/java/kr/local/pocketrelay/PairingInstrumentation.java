@@ -15,6 +15,7 @@ public class PairingInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();MainActivity activity=null;
         try{
+            testResyncQueue();
             SharedPreferences p=Store.prefs(getTargetContext());String oldURL=p.getString("url",""),oldToken=p.getString("token","");boolean oldUpload=p.getBoolean("upload",false);
             Intent intent=new Intent(Intent.ACTION_VIEW,Uri.parse("pocketrelay://pair#v=1&server=https%3A%2F%2Fexample.com&key=test-only-0123456789%2B%26"));
             intent.setPackage(getTargetContext().getPackageName());intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -35,8 +36,23 @@ public class PairingInstrumentation extends Instrumentation {
                 try{if(connection.getResponseCode()!=200)throw new AssertionError("Phone HTTPS authentication failed");}finally{connection.disconnect();}
                 network=" Phone HTTPS tunnel authentication also passed.";
             }
-            result.putString("stream","PASS: deep-link resolution, cold/warm auto-fill, server navigation; original credentials and upload setting unchanged."+network+"\n");finish(Activity.RESULT_OK,result);
+            result.putString("stream","PASS: resync clears only recoverable sent markers and preserves pending records; deep-link resolution, cold/warm auto-fill, server navigation; original credentials and upload setting unchanged."+network+"\n");finish(Activity.RESULT_OK,result);
         }catch(Throwable e){result.putString("stream","FAIL: "+e.getClass().getSimpleName()+" "+e.getMessage()+"\n");finish(Activity.RESULT_CANCELED,result);}
         finally{if(activity!=null){MainActivity a=activity;runOnMainSync(a::finish);}}
+    }
+    void testResyncQueue() throws Exception {
+        String name="server-sync-instrumentation.db";
+        getTargetContext().deleteDatabase(name);
+        try(Store db=new Store(getTargetContext(),name)){
+            String[] kinds={"sms","recording","contacts","kakao","file","sms"};
+            for(int i=0;i<kinds.length;i++){
+                String id=Store.hash("resync-test-"+i);
+                db.enqueue(id,kinds[i],new org.json.JSONObject().put("message","test"),null);
+                if(i<5)db.getWritableDatabase().execSQL("UPDATE queue SET sent=1,payload='{}' WHERE id=?",new Object[]{id});
+            }
+            if(db.resetRecoverableSent()!=3)throw new AssertionError("Wrong reset count");
+            for(int i=0;i<6;i++)if(db.exists(Store.hash("resync-test-"+i))!=(i>=3))throw new AssertionError("Pending or nonrecoverable history changed");
+            if(db.resetRecoverableSent()!=0)throw new AssertionError("Reset not idempotent");
+        } finally {getTargetContext().deleteDatabase(name);}
     }
 }

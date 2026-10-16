@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SyncJob extends JobService {
     static final AtomicBoolean RUNNING=new AtomicBoolean();
+    static final Object SERVER_LOCK=new Object();
     ExecutorService executor=Executors.newSingleThreadExecutor();
     Future<?> task;
     static void schedule(Context c,boolean periodic){
@@ -16,6 +17,9 @@ public class SyncJob extends JobService {
         c.getSystemService(JobScheduler.class).schedule(b.build());
     }
     static void run(Context c)throws Exception{
+        synchronized(SERVER_LOCK){runLocked(c);}
+    }
+    private static void runLocked(Context c)throws Exception{
         if(!RUNNING.compareAndSet(false,true))return;
         try(Store db=new Store(c)){
             String scanError=null;
@@ -36,7 +40,9 @@ public class SyncJob extends JobService {
         c.getSystemService(JobScheduler.class).schedule(b.build());
     }
     public boolean onStartJob(JobParameters p){
-        task=executor.submit(()->{boolean retry=false;try{run(this);}catch(Exception e){retry=true;Store.prefs(this).edit().putString("status","전송 대기 · "+e.getMessage()).apply();}jobFinished(p,retry&&p.getJobId()!=102);watchSms(this);});return true;
+        task=executor.submit(()->{boolean retry=false;try{run(this);}catch(Exception e){retry=true;Store.prefs(this).edit().putString("status","전송 대기 · "+e.getMessage()).apply();}jobFinished(p,retry&&p.getJobId()!=102);watchSms(this);
+            if(!retry&&Store.prefs(this).getBoolean("upload",false)){try(Store db=new Store(this)){if(db.hasPending())schedule(this,false);}}
+        });return true;
     }
     public boolean onStopJob(JobParameters p){if(task!=null)task.cancel(true);return true;}
     public void onDestroy(){executor.shutdownNow();super.onDestroy();}

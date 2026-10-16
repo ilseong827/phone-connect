@@ -84,3 +84,7 @@ $('connect').addEventListener('click',async()=>{
 });
 mode('chats');poll();setInterval(poll,3000);
 if(location.hash==='#connection')$('connect').click();
+
+async function dotStatus(){try{const r=await fetch('/api/dot-connection',{cache:'no-store'});const ready=r.ok;document.getElementById('dot-config').classList.toggle('hidden',!ready);document.getElementById('dot-note').textContent=ready?'Dot 연결 파일을 받아 Dot에게 전달하세요.':'조회 서버 주소를 준비 중입니다. 잠시 후 자동으로 다시 확인합니다.';}catch{document.getElementById('dot-note').textContent='조회 서버 연결을 확인할 수 없습니다.';}}
+document.getElementById('connect').addEventListener('click',dotStatus);
+setInterval(()=>{if(document.getElementById('settings').open)dotStatus();},5000);

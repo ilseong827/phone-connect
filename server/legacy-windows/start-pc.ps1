@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$project = Split-Path $PSScriptRoot -Parent
+$project = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Set-Location -LiteralPath $project
 $sessionFile = Join-Path $project '.tools/pc-session.json'
 if (Test-Path -LiteralPath $sessionFile) {
@@ -18,8 +18,8 @@ $token = [Convert]::ToBase64String($randomBytes).Replace('+','-').Replace('/','_
 $env:RELAY_TOKEN = $token
 $env:RELAY_DATA = Join-Path $project 'receiver-data'
 $python = Join-Path $project '.tools/python/python.exe'
-$receiver = Start-Process -FilePath $python -ArgumentList 'receiver/receiver.py' -WorkingDirectory $project -WindowStyle Hidden -PassThru -RedirectStandardOutput '.tools/receiver.log' -RedirectStandardError '.tools/receiver-error.log'
-$viewer = Start-Process -FilePath $python -ArgumentList 'receiver/chat_viewer.py' -WorkingDirectory $project -WindowStyle Hidden -PassThru -RedirectStandardOutput '.tools/viewer.log' -RedirectStandardError '.tools/viewer-error.log'
+$receiver = Start-Process -FilePath $python -ArgumentList 'server/legacy-windows/receiver.py' -WorkingDirectory $project -WindowStyle Hidden -PassThru -RedirectStandardOutput '.tools/receiver.log' -RedirectStandardError '.tools/receiver-error.log'
+$viewer = Start-Process -FilePath $python -ArgumentList 'server/legacy-windows/chat_viewer.py' -WorkingDirectory $project -WindowStyle Hidden -PassThru -RedirectStandardOutput '.tools/viewer.log' -RedirectStandardError '.tools/viewer-error.log'
 $tunnel = Start-Process -FilePath (Join-Path $project '.tools/cloudflared.exe') -ArgumentList 'tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8787' -WorkingDirectory $project -WindowStyle Hidden -PassThru -RedirectStandardOutput '.tools/tunnel-out.log' -RedirectStandardError '.tools/tunnel.log'
 $session = @{token=$token;url='';receiverPid=$receiver.Id;viewerPid=$viewer.Id;tunnelPid=$tunnel.Id;startedAt=(Get-Date).ToString('o')}
 $session | ConvertTo-Json | Set-Content -LiteralPath $sessionFile -Encoding UTF8

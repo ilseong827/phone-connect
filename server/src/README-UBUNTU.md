@@ -1,3 +1,5 @@
+현재 권장 운영은 [Podman 단일 컨테이너](../container/README.md)입니다. Dot에서는 수신 서버를 실행하지 않고 [외부 조회 클라이언트](../../dot/README.md)를 사용합니다. 아래는 일반 Ubuntu 서버에 네이티브 바이너리를 직접 설치하는 대안 안내입니다.
+
 # Phone Connect Ubuntu 1.1
 
 ## QR로 휴대폰 연결하기 (v1.1)

@@ -1,0 +1,19 @@
+# Android 앱
+
+`src/main`은 앱 코드, `src/test`는 단위 테스트, `src/androidTest`는 휴대폰 연결 테스트입니다.
+
+APK는 [최신 Releases](https://github.com/ilseong827/phone-connect/releases/latest)의 `PocketRelay-debug.apk`를 받습니다. 기존 앱을 지우지 말고 업데이트 설치합니다.
+
+왼쪽 메뉴: 상태 / 카카오톡 / 문자 / 녹음 / 서버.
+
+- 카카오톡: 본인에게 도착한 알림을 수집합니다. 발신 카톡과 전체 과거 대화는 지원하지 않습니다.
+- 문자: SMS/MMS 송수신과 연락처 이름을 동기화합니다. RCS는 지원하지 않습니다.
+- 녹음: Samsung Voice Recorder/통화 녹음 폴더를 선택하고 첫 동기화 기간을 정합니다.
+- 첨부: 접근 가능한 알림 파일 또는 Android 공유로 보낸 파일을 수집합니다. 모든 카톡 첨부를 자동으로 가져오는 것은 아닙니다.
+- 서버: QR로 연결을 눌러 PC 웹의 QR을 찍거나 직접 입력합니다.
+
+알림 접근·SMS·연락처·녹음 폴더 권한은 휴대폰에서 허용합니다. Android 절전에 따라 전송이 지연될 수 있습니다.
+
+빌드: 저장소 루트에서 JDK 17, Android SDK 35를 준비하고 `./gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest`를 실행합니다.
+
+Android v0.5.0: 새 서버 키로 연결 시 선택한 기간의 문자·녹음 재동기화. 서버 메뉴의 '현재 서버로 다시 동기화'로 수동 재전송 가능. 과거 카톡·공유 파일은 기존 서버에서 이전해야 합니다.

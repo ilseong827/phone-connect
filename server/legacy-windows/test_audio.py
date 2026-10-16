@@ -10,7 +10,7 @@ from chat_viewer import ChatViewer
 
 class AudioTest(unittest.TestCase):
     def test_pcm_playback_conversion_and_cache(self):
-        if not (Path(__file__).resolve().parent.parent/'.tools/ffmpeg.exe').is_file():self.skipTest('FFmpeg not installed')
+        if not (Path(__file__).resolve().parents[2]/'.tools/ffmpeg.exe').is_file():self.skipTest('FFmpeg not installed')
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/'sample.audio'
             with wave.open(str(source),'wb') as f:f.setnchannels(1);f.setsampwidth(2);f.setframerate(48000);f.writeframes(b'\0\0'*4800)

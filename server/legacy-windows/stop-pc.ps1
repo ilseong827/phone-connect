@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$project = Split-Path $PSScriptRoot -Parent
+$project = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $sessionFile = Join-Path $project '.tools/pc-session.json'
 if (!(Test-Path -LiteralPath $sessionFile)) { Write-Output 'No session found.'; exit }
 $session = Get-Content -LiteralPath $sessionFile -Raw | ConvertFrom-Json

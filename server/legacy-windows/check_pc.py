@@ -9,7 +9,7 @@ import wave
 from contextlib import closing
 from pathlib import Path
 
-root = Path(__file__).resolve().parent.parent
+root = Path(__file__).resolve().parents[2]
 config = json.loads((root / '.tools/pc-session.json').read_text('utf-8-sig'))
 ids = []
 

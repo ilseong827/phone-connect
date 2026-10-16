@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-const version = "1.1.0"
+const version = "1.2.0"
 
 type Config struct {
 	WebPort        int    `json:"webPort"`
@@ -199,7 +199,7 @@ func links(dir string, c Config) map[string]any {
 	return map[string]any{"web": fmt.Sprintf("http://localhost:%d", c.WebPort), "mcp": fmt.Sprintf("http://127.0.0.1:%d/mcp", c.MCPPort), "phoneServer": external, "phoneServerReady": external != "", "note": "localhost web/MCP are private. The phone needs HTTPS to the ingest port."}
 }
 
-const help = `PocketRelay 1.1 — Ubuntu daemon, local web UI and read-only Dot MCP
+const help = `PocketRelay 1.2 — Ubuntu daemon, local web UI and read-only Dot MCP
 
 pocketrelay [start]             Start in background (default)
 pocketrelay stop | restart      Stop / restart

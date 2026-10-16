@@ -12,7 +12,7 @@ def prepare(source):
     with _lock:
         if target.is_file() and target.stat().st_mtime>=source.stat().st_mtime:
             return target
-        executable=Path(__file__).resolve().parent.parent/'.tools/ffmpeg.exe'
+        executable=Path(__file__).resolve().parents[2]/'.tools/ffmpeg.exe'
         if not executable.is_file():raise RuntimeError('Playback converter is not installed')
         temporary=source.with_suffix('.playback.tmp.wav')
         try:

@@ -12,18 +12,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: daemon/go.mod
-          cache-dependency-path: daemon/go.sum
+          go-version-file: server/src/go.mod
+          cache-dependency-path: server/src/go.sum
       - name: Test and vet
-        working-directory: daemon
+        working-directory: server/src
         run: |
           go test ./...
           go vet ./...
       - name: Cross-compile Linux executables
-        working-directory: daemon
+        working-directory: server/src
         run: |
           for arch in amd64 arm64; do
             CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -o "/tmp/pocketrelay-$arch" .
+            CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -o "/tmp/phone-connect-reader-$arch" ./cmd/phone-connect-reader
           done
   android:
     runs-on: ubuntu-latest

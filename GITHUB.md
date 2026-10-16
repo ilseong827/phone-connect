@@ -1,6 +1,6 @@
 # Phone Connect · GitHub에서 보관하고 다시 설치하기
 
-소스는 Git 저장소에, 설치 파일은 GitHub Releases에 보관합니다. GitHub는 배포 파일 보관소이며 PocketRelay 서버를 상시 실행해 주는 호스팅은 아닙니다. 실제 수신 서버는 우분투/Dot 컴퓨터에서 실행합니다.
+소스는 Git 저장소에, 설치 파일은 GitHub Releases에 보관합니다. GitHub는 배포 파일 보관소이며 PocketRelay 서버를 상시 실행해 주는 호스팅은 아닙니다. 실제 수신 서버는 로컬 PC의 Podman 컨테이너에서 실행하고 Dot은 HTTPS로 조회합니다.
 
 현재 저장소는 공개입니다. 소스와 Releases 설치 파일은 로그인 없이 받을 수 있습니다. 개인 기록과 인증키는 저장소에 포함하지 않습니다.
 
@@ -10,7 +10,11 @@
 - Releases: Linux amd64/arm64 패키지와 기존 서명 Android APK, SHA256 체크섬.
 - 제외: 메시지·녹음·주소록 DB, 실제 첨부, 인증키, `.tools`, `receiver-data`, 로컬 설정, 서명 키.
 
-## 새 컴퓨터에서 설치
+## Podman 컨테이너 설치
+
+권장 방식은 [단일 컨테이너 안내](server/container/README.md)입니다. 릴리스의 컨테이너 이미지 아카이브를 내려받아 Podman에 로드하거나 소스를 빌드합니다. PC 폴더를 /data에 마운트하고 컨테이너를 시작하면 내부 프로그램은 모두 자동 실행됩니다.
+
+## 단독 Ubuntu 바이너리 설치 (대안)
 
 GitHub 저장소의 Releases에서 아키텍처에 맞는 `pocketrelay-linux-amd64.tar.gz` 또는 `pocketrelay-linux-arm64.tar.gz`를 받습니다. 일반 Intel/AMD Ubuntu의 로그인 없는 다운로드 예시입니다. ARM이면 파일명의 amd64를 arm64로 바꿉니다.
 
@@ -27,7 +31,7 @@ export PATH="$HOME/.local/bin:$PATH"
 pocketrelay
 ```
 
-상세 설정은 [Ubuntu 안내](daemon/README-UBUNTU.md)를 따릅니다. 설치 파일을 어디서든 받을 수 있는 것과 기존 기록이 따라오는 것은 다릅니다. 기록은 `backup`/`restore`로 별도 이전합니다.
+상세 설정은 [Ubuntu 안내](server/src/README-UBUNTU.md)를 따릅니다. 설치 파일을 어디서든 받을 수 있는 것과 기존 기록이 따라오는 것은 다릅니다. 기록은 `backup`/`restore`로 별도 이전합니다.
 
 ## 최초 게시
 

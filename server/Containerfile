@@ -1,0 +1,33 @@
+FROM docker.io/cloudflare/cloudflared:2026.10.1 AS tunnel
+FROM docker.io/library/golang:1.26-bookworm AS build
+WORKDIR /src
+COPY server/src/go.mod server/src/go.sum ./
+RUN go mod download
+COPY server/src/ ./
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/pocketrelay . && \
+    CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/phone-connect-reader ./cmd/phone-connect-reader
+
+FROM docker.io/library/debian:bookworm-slim AS speech
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git cmake g++ make && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth 1 --branch v1.8.3 https://github.com/ggml-org/whisper.cpp /src && \
+    cmake -S /src -B /src/build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF -DWHISPER_BUILD_TESTS=OFF && \
+    cmake --build /src/build --config Release -j 2 --target whisper-cli
+
+FROM docker.io/library/debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates ffmpeg libgomp1 curl && rm -rf /var/lib/apt/lists/*
+RUN curl -fL https://github.com/ilseong827/phone-connect/releases/download/v1.2.0/PocketRelay-debug.apk -o /usr/local/bin/PocketRelay-debug.apk && \
+    echo 'ea03bb22d55a35d53e876b428294e29a046b985f3783b1b9772e8498c1bd4db0  /usr/local/bin/PocketRelay-debug.apk' | sha256sum -c -
+RUN mkdir -p /opt/models && curl -fL --retry 3 https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin -o /opt/models/ggml-base.bin
+COPY --from=build /out/ /usr/local/bin/
+COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
+COPY --from=speech /src/build/bin/whisper-cli /usr/local/bin/whisper-cli
+COPY --from=speech /src/LICENSE /usr/share/doc/phone-connect/whisper-cpp-LICENSE
+COPY server/src/THIRD-PARTY-NOTICES.txt /usr/share/doc/phone-connect/THIRD-PARTY-NOTICES.txt
+RUN curl -fL https://raw.githubusercontent.com/cloudflare/cloudflared/2026.10.1/LICENSE -o /usr/share/doc/phone-connect/cloudflared-LICENSE && \
+    curl -fL https://raw.githubusercontent.com/openai/whisper/main/LICENSE -o /usr/share/doc/phone-connect/whisper-model-LICENSE
+COPY server/container/entrypoint.sh /usr/local/bin/phone-connect-entrypoint
+COPY server/container/connect.sh /usr/local/bin/phone-connect-info
+RUN chmod 755 /usr/local/bin/phone-connect-entrypoint /usr/local/bin/phone-connect-info
+ENV POCKETRELAY_CONTAINER=1
+ENTRYPOINT ["/usr/local/bin/phone-connect-entrypoint"]
+CMD ["all"]

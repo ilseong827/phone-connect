@@ -206,6 +206,6 @@ if __name__ == '__main__':
     server = HTTPServer(('127.0.0.1', int(os.environ.get('RELAY_PORT', '8787'))), Handler)
     server.token = token
     server.data_root = Path(os.environ.get('RELAY_DATA', 'receiver-data'))
-    server.apk_path = Path(__file__).resolve().parent.parent / 'dist' / 'PocketRelay-debug.apk'
+    server.apk_path = Path(__file__).resolve().parents[2] / 'dist' / 'PocketRelay-debug.apk'
     print('Local reference receiver: 127.0.0.1:8787. HTTPS proxy required for Android.')
     server.serve_forever()
