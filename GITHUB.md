@@ -15,9 +15,10 @@
 GitHub 저장소의 Releases에서 아키텍처에 맞는 `pocketrelay-linux-amd64.tar.gz` 또는 `pocketrelay-linux-arm64.tar.gz`를 받습니다. 일반 Intel/AMD Ubuntu의 로그인 없는 다운로드 예시입니다. ARM이면 파일명의 amd64를 arm64로 바꿉니다.
 
 ```bash
-gh auth login
-gh release download --repo ilseong827/phone-connect --pattern 'pocketrelay-linux-amd64.tar.gz' --pattern SHA256SUMS --dir pocketrelay-download
+mkdir -p pocketrelay-download
 cd pocketrelay-download
+curl -fLO https://github.com/ilseong827/phone-connect/releases/latest/download/pocketrelay-linux-amd64.tar.gz
+curl -fLO https://github.com/ilseong827/phone-connect/releases/latest/download/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 tar -xzf pocketrelay-linux-amd64.tar.gz
 cd pocketrelay-linux-amd64
