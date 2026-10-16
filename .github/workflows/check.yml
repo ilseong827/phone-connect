@@ -1,0 +1,38 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  daemon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: daemon/go.mod
+          cache-dependency-path: daemon/go.sum
+      - name: Test and vet
+        working-directory: daemon
+        run: |
+          go test ./...
+          go vet ./...
+      - name: Cross-compile Linux executables
+        working-directory: daemon
+        run: |
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -o "/tmp/pocketrelay-$arch" .
+          done
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile and lint Android
+        run: bash gradlew :app:assembleDebug :app:lintDebug --console=plain
+      # CI debug APKs have a different signing key. Do not publish them as phone updates.

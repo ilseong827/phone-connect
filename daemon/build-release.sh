@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+go test ./...
+go vet ./...
+for arch in amd64 arm64; do
+  target="../dist/pocketrelay-linux-$arch"
+  mkdir -p "$target"
+  CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "$target/pocketrelay" .
+  cp install.sh install-transcription.sh install-tunnel.sh README-UBUNTU.md DOT-SETUP.txt THIRD-PARTY-NOTICES.txt "$target/"
+  cp ../dist/PocketRelay-debug.apk "$target/"
+  chmod 755 "$target"/*.sh "$target/pocketrelay"
+  (cd "$target"; sha256sum pocketrelay PocketRelay-debug.apk *.sh README-UBUNTU.md DOT-SETUP.txt THIRD-PARTY-NOTICES.txt > SHA256SUMS)
+  tar -C ../dist -czf "../dist/pocketrelay-linux-$arch.tar.gz" "pocketrelay-linux-$arch"
+done
