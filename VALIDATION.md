@@ -84,3 +84,12 @@
 - Actual Auth0/other provider authorization-code login/refresh, fixed Cloudflare tunnel, ChatGPT plugin installation, Dot and mobile calls remain pending user account setup. This is not a completed ChatGPT integration.
 
 - Final OCI image `013a96fa5e7a` smoke test in a separate synthetic-data container passed: automatic startup, web MCP page, APK SHA-256, FFmpeg/model presence, upload/read, dedup and restart persistence. MCP returned 503 before configuration. Live user data container was not used for synthetic uploads.
+
+## Fixed-domain ChatGPT OAuth plugin verification (2026-10-19)
+
+- Existing Podman v1.2.1 server and named Cloudflare tunnel used with a fixed HTTPS MCP address. Created an account plugin and completed Auth0 OAuth login in ChatGPT web.
+- Initial authenticated requests failed with `stage=owner_check`: the selected Google login had a different subject from the previously configured email/password identity. Updated the owner subject to the user-authorized Google identity without relaxing issuer, audience, scope or subject checks. Updated the private configuration backup as well.
+- Reconnection displayed a connected account without the authentication-update warning. Authenticated MCP protocol requests returned HTTP 200 in server logs.
+- Through the remote account plugin, `relay_status`, `search_messages` and `list_recordings` returned results. The query was limited to three messages and three recordings; this did not establish that the returned records were globally the newest records. Kakao-specific retrieval was not separately verified in this run.
+- No message sending or calendar creation occurred. No credentials, owner identifiers, personal messages, recordings or private configuration archives are included in this validation document or public source.
+- This supersedes the earlier pending ChatGPT web OAuth connection status. Separate mobile/Dot clients, token refresh/revocation, migration to a fresh PC and long-term uptime remain unverified by this test.

@@ -88,7 +88,16 @@ ChatGPT **웹의 계정용 Plugins → Add custom MCP server** 경로를 사용�
 
 등록이나 도구 목록 표시만 성공한 것은 전체 연동 성공이 아닙니다. 실제 OAuth 제공자에서 refresh/revoke 동작도 확인합니다. 자체 검증하는 JWT는 제공자가 폐기한 뒤에도 토큰 만료까지 유효할 수 있으므로 짧은 수명을 사용하고 긴급 차단에는 MCP 활성화를 해제합니다.
 
-## 개발 테스트
+## 실제 연결에서 확인한 문제 해결
+
+- `Client is not authorized to access resource server`: Auth0의 해당 API → Application Access에서 ChatGPT용 application의 **User-delegated Access**에 `records:read`를 허용합니다. Client Access나 Anonymous Access를 열 필요는 없습니다.
+- 인증은 성공했지만 도구 검색이 실패하고 서버 로그가 `stage=owner_check`인 경우: 실제 로그인한 계정의 User ID와 서버의 본인 Subject를 비교합니다. 이메일이 같아도 이메일·비밀번호 로그인(`auth0|...`)과 Google 로그인(`google-oauth2|...`)은 서로 다른 계정 ID일 수 있습니다. 본인이 사용할 로그인 계정의 정확한 ID로 설정하고 재연결합니다. 이메일 일치만으로 접근을 허용하거나 소유자 검증을 끄지 않습니다.
+- ChatGPT 연결 완료 후 `relay_status`, `search_messages`, `list_recordings`를 실제 호출해 확인합니다. 로컬 STDIO MCP 성공을 원격 OAuth 플러그인 성공으로 대신하지 않습니다.
+- 다른 PC로 이전할 때는 이미지 외에 비공개 설정도 복원해야 합니다. `/data/mcp.json`과 Cloudflare 터널 자격증명 등 개인 설정은 공개 저장소·이미지에 포함하지 않습니다. 소유자 설정을 변경했다면 개인 백업도 갱신합니다.
+
+2026-10-19에 고정 도메인·Auth0 OAuth를 사용하는 ChatGPT 웹 계정 플러그인에서 상태, 메시지 및 녹음 목록 조회를 확인했습니다. 모바일·Dot 각각의 실제 조회, 장기 상시 운영, 토큰 refresh/revoke는 별도 검증 대상입니다.
+
+## 개발 테스트 실행
 
 ```bash
 cd server/src
