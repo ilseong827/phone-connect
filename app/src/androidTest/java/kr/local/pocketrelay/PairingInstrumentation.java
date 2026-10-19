@@ -15,6 +15,19 @@ public class PairingInstrumentation extends Instrumentation {
     @Override public void onStart(){
         Bundle result=new Bundle();MainActivity activity=null;
         try{
+            if(arguments!=null&&"true".equals(arguments.getString("backgroundOnly"))){
+                android.content.Context c=getTargetContext();
+                android.app.job.JobScheduler scheduler=c.getSystemService(android.app.job.JobScheduler.class);
+                new RecoveryReceiver().onReceive(c,new Intent(Intent.ACTION_MY_PACKAGE_REPLACED));
+                android.app.job.JobInfo periodic=scheduler.getPendingJob(100);
+                if(periodic==null||!periodic.isPersisted()||periodic.getIntervalMillis()!=900000L)throw new AssertionError("Periodic recovery failed");
+                if(scheduler.getPendingJob(101)==null)throw new AssertionError("Immediate recovery failed");
+                if(Store.prefs(c).getBoolean("sms",false)&&SmsSync.allowed(c)&&scheduler.getPendingJob(102)==null)throw new AssertionError("SMS watch recovery failed");
+                SyncJob.schedule(c,true);SyncJob.watchSms(c);
+                if(!periodic.equals(scheduler.getPendingJob(100)))throw new AssertionError("Periodic job changed");
+                result.putString("stream","PASS: update recovery restores persisted periodic work, immediate work and enabled SMS watcher.\n");
+                finish(Activity.RESULT_OK,result);return;
+            }
             testResyncQueue();
             SharedPreferences p=Store.prefs(getTargetContext());String oldURL=p.getString("url",""),oldToken=p.getString("token","");boolean oldUpload=p.getBoolean("upload",false);
             Intent intent=new Intent(Intent.ACTION_VIEW,Uri.parse("pocketrelay://pair#v=1&server=https%3A%2F%2Fexample.com&key=test-only-0123456789%2B%26"));

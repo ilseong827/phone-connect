@@ -6,6 +6,15 @@ import android.service.notification.*;
 import org.json.*;
 
 public class KakaoListener extends NotificationListenerService {
+    @Override public void onListenerConnected(){
+        Store.prefs(this).edit().putBoolean("listenerConnected",true).apply();
+        SyncJob.schedule(this,true);SyncJob.watchSms(this);SyncJob.schedule(this,false);
+    }
+    @Override public void onListenerDisconnected(){
+        Store.prefs(this).edit().putBoolean("listenerConnected",false).apply();
+        if(Store.prefs(this).getBoolean("capture",false))
+            requestRebind(new android.content.ComponentName(this,KakaoListener.class));
+    }
     @Override public void onNotificationPosted(StatusBarNotification sbn) {
         if(!sbn.getPackageName().equals("com.kakao.talk") || !Store.prefs(this).getBoolean("capture",false))return;
         Notification n=sbn.getNotification();

@@ -32,6 +32,9 @@ public class MainActivity extends Activity {
         LinearLayout state=card();label(state,"연결 상태",18,ink,true);status=label(state,"",14,ink,false);
         button(state,"상태 새로고침",this::refresh);
         button(state,"전송 대기 기록 보기",this::showPending);
+        button(state,"백그라운드 실행 · 배터리 제한 해제",this::requestBackgroundAccess);
+        button(state,"앱 배터리 설정 열기",()->startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))));
+        label(state,"삼성 설정의 절전 앱·초절전 앱에서 이 앱을 제외하세요. 강제 중지하면 앱을 다시 열어야 합니다. Wi-Fi 전용이면 모바일 데이터에서는 전송을 기다립니다.",12,ink,false);
         LinearLayout kakao=card();label(kakao,"01   카카오톡",20,ink,true);
         label(kakao,"발신자 · 채팅방 · 메시지 · 수신 시간\n알림에 없는 정보는 ‘확인 불가’로 보냅니다. 과거 대화는 가져오지 않습니다. 파일은 알림이 접근 주소를 제공할 때만 자동 수집합니다. 사진·GIF·영상·문서 모두 지원하며, 알림에 없는 파일은 카카오톡 또는 내 파일의 공유 → 내 기록 보내기로 전달하세요. 파일당 100MB까지입니다.",14,ink,false);
         Switch capture=new Switch(this);capture.setText("새 카톡 알림 수집");capture.setChecked(prefs.getBoolean("capture",false));kakao.addView(capture);
@@ -131,7 +134,7 @@ public class MainActivity extends Activity {
         label(rail,"p.",30,Color.WHITE,true);
         ScrollView pageScroll=new ScrollView(this);pageScroll.setFillViewport(true);LinearLayout.LayoutParams right=new LinearLayout.LayoutParams(0,-1,1);root.addView(pageScroll,right);
         LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(12),dp(18),dp(12),dp(16));pageScroll.addView(content);
-        TextView pageTitle=label(content,"상태",26,ink,true);label(content,"Phone Connect · v0.4",11,green,false);
+        TextView pageTitle=label(content,"상태",26,ink,true);label(content,"Phone Connect · v0.5.1",11,green,false);
         FrameLayout pages=new FrameLayout(this);content.addView(pages,new LinearLayout.LayoutParams(-1,-2));
         String[] names={"상태","카카오톡","문자","녹음","서버"};LinearLayout[] cards={state,kakao,sms,audio,network};LinearLayout[] containers=new LinearLayout[5];Button[] buttons=new Button[5];
         for(int i=0;i<5;i++){
@@ -170,10 +173,18 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request==1&&result==RESULT_OK&&data!=null&&data.getData()!=null){try{
         Uri uri=data.getData();getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);selectedFolder=uri.toString();folderLabel.setText("선택됨 · "+uri.getLastPathSegment()+"\n기간을 확인한 뒤 시작하세요.");
     }catch(Exception e){toast("폴더 접근 권한을 저장하지 못했습니다.");}}}
+    void requestBackgroundAccess(){
+        if(getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName())){toast("이미 배터리 최적화에서 제외되어 있습니다.");return;}
+        try{startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,Uri.parse("package:"+getPackageName())));}
+        catch(ActivityNotFoundException e){startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));}
+    }
     void refresh(){if(status==null)return;try(Store db=new Store(this)){
         String enabled=Settings.Secure.getString(getContentResolver(),"enabled_notification_listeners");boolean access=enabled!=null&&enabled.contains(new ComponentName(this,KakaoListener.class).flattenToString());
         status.setText("카톡 접근 권한: "+(access?"허용":"설정 필요")+"\n문자 수집: "+(prefs.getBoolean("sms",false)?"켜짐":"꺼짐")+"\n녹음 자동 수집: "+(prefs.getBoolean("recordings",false)?"켜짐":"꺼짐")+"\n외부 전송: "+(prefs.getBoolean("upload",false)?"켜짐":"꺼짐")+"\n\n"+db.counts()+"\n"+prefs.getString("status","수신 서버 없이 수집부터 시작할 수 있습니다.")+"\n날짜 미확인 녹음: "+prefs.getInt("unknownDates",0)+"개");
         if(smsStatus!=null)smsStatus.setText("문자 권한: "+(SmsSync.allowed(this)?"허용":"허용 필요")+"\n주소록 권한: "+(ContactNames.allowed(this)?"허용":"허용 필요")+"\n자동 수집: "+(prefs.getBoolean("sms",false)?"켜짐":"꺼짐")+"\n"+prefs.getString("smsStatus","기간을 선택하고 수집을 시작하세요."));
+        boolean unrestricted=getSystemService(PowerManager.class).isIgnoringBatteryOptimizations(getPackageName());
+        long checked=prefs.getLong("lastSyncFinished",0);
+        status.append("\n\n배터리 최적화: "+(unrestricted?"제외됨":"제한 해제 필요")+"\n전송 네트워크: "+(prefs.getBoolean("wifi",true)?"Wi-Fi 전용":"Wi-Fi·모바일 데이터")+"\n최근 작업 종료: "+(checked==0?"아직 없음":android.text.format.DateFormat.format("MM/dd HH:mm:ss",checked))+"\n작업 종료 시각은 전송 성공을 의미하지 않습니다.");
         if(selectedFolder.isEmpty())folderLabel.setText(prefs.getString("folder","").isEmpty()?"아직 선택한 폴더가 없습니다.":"선택 폴더 · "+Uri.parse(prefs.getString("folder","")).getLastPathSegment());
     }}
     @Override protected void onResume(){super.onResume();refresh();}
