@@ -8,7 +8,7 @@ if [[ -z "$engine" ]]; then
 fi
 command -v "$engine" >/dev/null || { echo 'Install Docker or Podman first.' >&2; exit 1; }
 name=${PHONE_CONNECT_NAME:-phone-connect}
-image=${PHONE_CONNECT_IMAGE:-localhost/phone-connect:1.2.1}
+image=${PHONE_CONNECT_IMAGE:-localhost/phone-connect:1.2.2}
 port=${PHONE_CONNECT_PORT:-8788}
 if "$engine" container inspect "$name" >/dev/null 2>&1; then
  "$engine" start "$name"

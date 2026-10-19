@@ -22,6 +22,8 @@ Docker와 Podman을 자동 감지하며 `CONTAINER_ENGINE=docker bash start.sh`�
 
 ## 현재 ChatGPT / Dot 연결
 
+v1.2.2부터 [Google 로그인 외부 웹](../REMOTE-WEB.md)을 지원합니다. `/data/web.json`과 인증된 조회 전용 포트 8791로 향하는 named tunnel 규칙을 함께 복원하면 외부 브라우저에서도 본인만 기록을 볼 수 있습니다. 로컬 관리 웹을 인증 없이 터널에 직접 연결하지 않습니다.
+
 권장 방식은 **OAuth 인증된 원격 MCP 플러그인**입니다. [MCP 설정 안내](../MCP.md)를 따르세요. 웹의 연결 창에서 MCP 설정을 열 수 있습니다. 아래 Python 조회 설명은 이전 버전 호환용입니다. 고정 조회 터널은 `/data/reader-tunnel-token` 파일을 준비하면 시작 시 자동 실행합니다.
 
 # Phone Connect · Podman 단일 컨테이너

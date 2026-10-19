@@ -93,3 +93,11 @@
 - Through the remote account plugin, `relay_status`, `search_messages` and `list_recordings` returned results. The query was limited to three messages and three recordings; this did not establish that the returned records were globally the newest records. Kakao-specific retrieval was not separately verified in this run.
 - No message sending or calendar creation occurred. No credentials, owner identifiers, personal messages, recordings or private configuration archives are included in this validation document or public source.
 - This supersedes the earlier pending ChatGPT web OAuth connection status. Separate mobile/Dot clients, token refresh/revocation, migration to a fresh PC and long-term uptime remain unverified by this test.
+
+## Authenticated external browser viewer v1.2.2 (2026-10-19)
+
+- Added a separate port 8791 read-only viewer behind the existing named tunnel; local administration is unchanged. Google login uses a separate Auth0 public client with Authorization Code + PKCE, state and nonce. Only the configured exact owner subject is allowed.
+- OAuth integration tests use a local TLS identity provider with real RSA-signed ID tokens. Valid login succeeds; incorrect subject, nonce, audience, expiry, state and reused callbacks fail. Host/Origin checks, anonymous requests, private settings endpoints, logout and hot-disable are covered. Full Go tests, race tests and vet passed.
+- Actual Google login on the fixed HTTPS viewer displayed stored Kakao notifications. A public test recording loaded with an 11-second duration, played, and displayed its stored transcript. No personal audio was needed for playback validation.
+- Public unauthenticated events and pairing requests returned 401. Phone ingest health remained healthy and unauthenticated MCP still returned 401. No Cloudflare Access subscription, payment method or charge was added.
+- Mobile browser hardware and long-term operation remain untested. Sessions are memory-only and require login after server restart.

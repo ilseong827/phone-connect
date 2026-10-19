@@ -91,6 +91,12 @@ func serve(dir string, c Config) error {
 	defer cancel()
 	handlers := []http.Handler{http.HandlerFunc(a.ingest), private(c.WebPort, http.HandlerFunc(a.viewer)), private(c.MCPPort, http.HandlerFunc(a.mcpHTTP))}
 	ports := []int{c.IngestPort, c.WebPort, c.MCPPort}
+	if remote, err := newRemoteWeb(a); err == nil {
+		handlers = append(handlers, remote)
+		ports = append(ports, 8791)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("remote web configuration: %w", err)
+	}
 	listeners := []net.Listener{}
 	defer func() {
 		for _, l := range listeners {
