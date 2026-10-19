@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -146,6 +147,10 @@ func (a *mcpAccess) getVerifier(ctx context.Context, c mcpconfig.Config) (*oidc.
 }
 
 func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	diagnostic := &mcpDiagnosticWriter{ResponseWriter: w}
+	w = diagnostic
+	stage := "configuration"
+	defer func() { log.Printf("MCP request status=%d stage=%s", diagnostic.status, stage) }()
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	c, e := mcpconfig.Load(a.dir)
@@ -154,15 +159,18 @@ func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	public, _ := url.Parse(c.PublicURL)
+	stage = "host_check"
 	if r.Host != public.Host {
 		failure(w, 403, "Unexpected host")
 		return
 	}
+	stage = "origin_check"
 	if origin := r.Header.Get("Origin"); origin != "" && origin != strings.TrimRight(c.PublicURL, "/") {
 		failure(w, 403, "Unexpected origin")
 		return
 	}
 	if strings.HasPrefix(r.URL.Path, "/.well-known/oauth-protected-resource") {
+		stage = "metadata"
 		if r.URL.Path != "/.well-known/oauth-protected-resource" && r.URL.Path != "/.well-known/oauth-protected-resource/mcp" {
 			failure(w, 404, "Not found")
 			return
@@ -175,6 +183,7 @@ func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path != "/mcp" {
+		stage = "unknown_route"
 		failure(w, 404, "Not found")
 		return
 	}
@@ -183,23 +192,32 @@ func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("WWW-Authenticate", challenge)
 		failure(w, 401, "OAuth authentication required")
 	}
+	stage = "bearer_header"
 	auth := r.Header.Get("Authorization")
 	if !strings.HasPrefix(auth, "Bearer ") || len(auth) > 16384 {
 		reject()
 		return
 	}
 	raw := strings.TrimPrefix(auth, "Bearer ")
+	stage = "token_format"
 	if strings.Count(raw, ".") != 2 {
 		reject()
 		return
 	}
+	stage = "provider_discovery"
 	verifier, e := a.getVerifier(r.Context(), c)
 	if e != nil {
 		failure(w, 503, "OAuth provider unavailable or incompatible")
 		return
 	}
+	stage = "token_verification"
 	token, e := verifier.Verify(r.Context(), raw)
-	if e != nil || token.Subject != c.OwnerSubject || token.Expiry.IsZero() {
+	if e != nil {
+		reject()
+		return
+	}
+	stage = "owner_check"
+	if token.Subject != c.OwnerSubject || token.Expiry.IsZero() {
 		reject()
 		return
 	}
@@ -207,6 +225,7 @@ func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Scope     string `json:"scope"`
 		NotBefore int64  `json:"nbf"`
 	}
+	stage = "claims_check"
 	if token.Claims(&claims) != nil || claims.NotBefore > time.Now().Unix() {
 		reject()
 		return
@@ -217,10 +236,33 @@ func (a *mcpAccess) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			scopeOK = true
 		}
 	}
+	stage = "scope_check"
 	if !scopeOK {
 		w.Header().Set("WWW-Authenticate", challenge+`, error="insufficient_scope"`)
 		failure(w, 403, "Read scope required")
 		return
 	}
+	stage = "mcp_protocol"
 	a.handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ownerContext{}, c.Issuer+"|"+token.Subject)))
+}
+
+// Never log headers, tokens, claims, query strings, request/response bodies or
+// verifier error strings: they can contain credentials or personal records.
+type mcpDiagnosticWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *mcpDiagnosticWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
+func (w *mcpDiagnosticWriter) WriteHeader(status int) {
+	if w.status == 0 {
+		w.status = status
+	}
+	w.ResponseWriter.WriteHeader(status)
+}
+func (w *mcpDiagnosticWriter) Write(b []byte) (int, error) {
+	if w.status == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(b)
 }

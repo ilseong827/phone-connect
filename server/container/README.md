@@ -1,3 +1,25 @@
+## 고정 도메인 자동 실행 (1.2.1)
+
+릴리스의 `start.sh`와 `phone-connect-container-amd64.tar.gz`를 같은 폴더에 받으세요.
+기존 서버의 개인 `phone-connect-data/` 폴더도 옆에 놓고 `bash start.sh`를 실행하면
+이미지 로드, 컨테이너 생성, 서버와 터널 시작을 자동 처리합니다.
+Docker와 Podman을 자동 감지하며 `CONTAINER_ENGINE=docker bash start.sh`로 선택할 수 있습니다.
+이후에는 `docker start phone-connect` 또는 `podman start phone-connect`만 실행하면 됩니다.
+
+고정 터널에는 다음 개인 파일이 필요합니다. 공개 이미지와 GitHub에는 포함하지 않습니다.
+
+- `phone-connect-data/cloudflared/config.yml`: 수신 8787과 조회 8790의 도메인 라우팅
+- `phone-connect-data/cloudflared/credentials.json`: 해당 터널 실행 자격증명
+- `phone-connect-data/config.json`: 고정 업로드 URL 및 기존 업로드 키
+- `phone-connect-data/mcp.json`: 고정 MCP URL, OAuth issuer, 허용 사용자
+- 기존 DB, 녹음, `reader.key` 등: 서버 이전 시 전체 데이터 폴더를 보존
+
+`fixed-tunnel.example.yml`을 참고하세요. config.json의 `publicUrl`에 업로드 HTTPS 주소를
+설정하면 고정 모드에서는 임시 터널이 시작되지 않습니다. 등록과 OAuth 연결은 처음 한 번
+필요합니다. 같은 터널 자격증명을 서로 다른 데이터가 있는 두 PC에서 동시에 실행하지 마세요.
+이전 시 기존 컨테이너를 정지하고 데이터 폴더를 복사한 다음 새 PC에서 시작합니다.
+개인 설정 백업에는 인증키가 있으므로 본인 기기 사이에서만 전달하세요.
+
 ## 현재 ChatGPT / Dot 연결
 
 권장 방식은 **OAuth 인증된 원격 MCP 플러그인**입니다. [MCP 설정 안내](../MCP.md)를 따르세요. 웹의 연결 창에서 MCP 설정을 열 수 있습니다. 아래 Python 조회 설명은 이전 버전 호환용입니다. 고정 조회 터널은 `/data/reader-tunnel-token` 파일을 준비하면 시작 시 자동 실행합니다.

@@ -438,7 +438,14 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 		key, e := os.ReadFile(filepath.Join(a.dir, "reader.key"))
 		logBytes, logError := os.ReadFile(filepath.Join(a.dir, "reader-tunnel.log"))
 		matches := regexp.MustCompile(`https://[a-z0-9-]+\.trycloudflare\.com`).FindAllString(string(logBytes), -1)
-		if e != nil || logError != nil || len(matches) == 0 {
+		readerURL := ""
+		if logError == nil && len(matches) > 0 {
+			readerURL = matches[len(matches)-1]
+		}
+		if c, err := mcpconfig.Load(a.dir); err == nil && c.PublicURL != "" {
+			readerURL = c.PublicURL
+		}
+		if e != nil || readerURL == "" {
 			fail(w, 503, "Dot connection is still starting")
 			return
 		}
@@ -446,7 +453,7 @@ func (a *App) viewer(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/x-python; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		io.WriteString(w, dotScript(matches[len(matches)-1], strings.TrimSpace(string(key))))
+		io.WriteString(w, dotScript(readerURL, strings.TrimSpace(string(key))))
 	case "/api/state":
 		respond(w, 200, a.state())
 	default:

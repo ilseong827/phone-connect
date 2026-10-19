@@ -4,11 +4,17 @@ if [[ "${1:-all}" != all ]]; then exec "$@"; fi
 umask 077
 mkdir -p /data
 pocketrelay init --data /data >/dev/null
+pocketrelay config --data /data --web-port "${PHONE_CONNECT_WEB_PORT:-8788}" >/dev/null
 pocketrelay config --data /data --model /opt/models/ggml-base.bin --whisper /usr/local/bin/whisper-cli --ffmpeg /usr/bin/ffmpeg --language ko --auto-transcribe=true >/dev/null
 if [[ ! -f /data/reader.key ]]; then
  phone-connect-reader --key-file /data/reader.key --init-key
 fi
-if [[ "${PHONE_CONNECT_TUNNEL:-on}" == on ]]; then
+fixed=false
+if [[ "${PHONE_CONNECT_TUNNEL:-on}" == on && -s /data/cloudflared/config.yml ]]; then
+ fixed=true
+ cloudflared tunnel --config /data/cloudflared/config.yml ingress validate
+fi
+if [[ "${PHONE_CONNECT_TUNNEL:-on}" == on && "$fixed" == false ]]; then
  pocketrelay config --data /data --tunnel-protocol http2 >/dev/null
  pocketrelay tunnel on --data /data >/dev/null
 else
@@ -31,7 +37,9 @@ phone-connect-reader --data /data --key-file /data/reader.key &
 reader=$!
 if [[ "${PHONE_CONNECT_TUNNEL:-on}" == on ]]; then
  : >/data/reader-tunnel.log
- if [[ -s /data/reader-tunnel-token ]]; then
+ if [[ "$fixed" == true ]]; then
+  cloudflared tunnel --config /data/cloudflared/config.yml --no-autoupdate --protocol http2 run 2>/data/reader-tunnel.log &
+ elif [[ -s /data/reader-tunnel-token ]]; then
   cloudflared tunnel --no-autoupdate --protocol http2 run --token-file /data/reader-tunnel-token 2>/data/reader-tunnel.log &
  else
   cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8790 2>/data/reader-tunnel.log &

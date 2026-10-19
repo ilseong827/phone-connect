@@ -1,0 +1,9 @@
+# Save as /data/cloudflared/config.yml with private tunnel credentials beside it.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /data/cloudflared/credentials.json
+ingress:
+  - hostname: phone.example.com
+    service: http://127.0.0.1:8787
+  - hostname: mcp.example.com
+    service: http://127.0.0.1:8790
+  - service: http_status:404

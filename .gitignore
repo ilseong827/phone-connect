@@ -32,3 +32,5 @@ daemon/pocketrelay
 # Private generated connection files
 dot-reader.py
 reader-tunnel-token
+**/cloudflared/
+private-setup*.tar.gz
