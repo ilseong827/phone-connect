@@ -101,3 +101,7 @@
 - Actual Google login on the fixed HTTPS viewer displayed stored Kakao notifications. A public test recording loaded with an 11-second duration, played, and displayed its stored transcript. No personal audio was needed for playback validation.
 - Public unauthenticated events and pairing requests returned 401. Phone ingest health remained healthy and unauthenticated MCP still returned 401. No Cloudflare Access subscription, payment method or charge was added.
 - Mobile browser hardware and long-term operation remain untested. Sessions are memory-only and require login after server restart.
+
+## v1.2.3 responsive layout
+- Live authenticated viewer: 3440px viewport/app/document widths all 3440px; 390px mobile widths all 390px, with no horizontal overflow.
+- Container rebuilt and deployed with existing data mount. Unauthenticated remote API returns 401.

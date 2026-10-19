@@ -2,9 +2,9 @@
 
 **내 휴대폰의 카카오톡·문자·통화 녹음을 PC에 보관하고 Dot에서 조회합니다.**
 
-[컨테이너 설치 파일](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.2) · [Android APK](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.0) · [Docker / Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Google 로그인 외부 웹](server/REMOTE-WEB.md)
+[컨테이너 설치 파일](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.3) · [Android APK](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.0) · [Docker / Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Google 로그인 외부 웹](server/REMOTE-WEB.md)
 
-> v1.2.2는 고정 도메인 자동 실행과 본인 Google 로그인으로 보호되는 외부 조회 웹을 지원합니다. 릴리스의 `start.sh`와 이미지 파일을 같은 폴더에 두고 개인 `phone-connect-data/`를 복원한 뒤 `bash start.sh`로 시작합니다. OAuth 제공자·주소의 최초 설정과 실제 ChatGPT/Dot 연결은 계정에서 마쳐야 합니다. 개인 인증 정보는 공개 다운로드에 포함되지 않습니다.
+> v1.2.3는 고정 도메인 자동 실행과 본인 Google 로그인으로 보호되는 외부 조회 웹을 지원합니다. 릴리스의 `start.sh`와 이미지 파일을 같은 폴더에 두고 개인 `phone-connect-data/`를 복원한 뒤 `bash start.sh`로 시작합니다. OAuth 제공자·주소의 최초 설정과 실제 ChatGPT/Dot 연결은 계정에서 마쳐야 합니다. 개인 인증 정보는 공개 다운로드에 포함되지 않습니다.
 
 ## 구조
 
