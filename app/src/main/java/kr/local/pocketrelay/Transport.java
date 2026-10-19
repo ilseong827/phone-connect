@@ -36,6 +36,12 @@ class Transport {
                 payload=prepared.toString();
                 ContentValues attempt=new ContentValues();attempt.put("attempted",System.currentTimeMillis());
                 db.getWritableDatabase().update("queue",attempt,"id=?",new String[]{id});
+                if(kind.equals("recording") && prepared.optLong("size")>32L*1024*1024){
+                    uploadRecording(c,base,token,id,prepared,Uri.parse(r.getString(3)));
+                    ContentValues done=new ContentValues();done.put("sent",1);done.put("payload","{}");done.putNull("uri");
+                    db.getWritableDatabase().update("queue",done,"id=?",new String[]{id});db.removePayload(id);
+                    continue;
+                }
                 HttpURLConnection con=(HttpURLConnection)new URL(base.replaceAll("/+$","")+"/v1/"+(kind.equals("recording")?"recordings":"events")).openConnection();
                 con.setInstanceFollowRedirects(false);con.setConnectTimeout(15000);con.setReadTimeout(60000);con.setRequestMethod("POST");con.setDoOutput(true);
                 con.setRequestProperty("Authorization","Bearer "+token);con.setRequestProperty("Idempotency-Key",id);
@@ -81,6 +87,49 @@ class Transport {
         }
     }
     static void write(OutputStream out,String s)throws IOException{out.write(s.getBytes(StandardCharsets.UTF_8));}
+    static void verifyRecording(Context c,Uri uri,JSONObject meta)throws Exception{
+        try(Cursor f=c.getContentResolver().query(uri,new String[]{"_size","last_modified"},null,null,null)){
+            if(f==null||!f.moveToFirst()||f.getLong(0)!=meta.getLong("size")||f.getLong(1)!=meta.getLong("fileModifiedAt"))throw new IOException("녹음 파일이 변경되었거나 접근할 수 없습니다");
+        }
+    }
+    static JSONObject chunkRequest(String base,String token,String id,String action,byte[] body,String hash)throws Exception{
+        HttpURLConnection con=(HttpURLConnection)new URL(base.replaceAll("/+$","")+"/v1/recording-upload/"+action).openConnection();
+        try{
+            con.setInstanceFollowRedirects(false);con.setConnectTimeout(15000);con.setReadTimeout(120000);con.setRequestMethod("POST");con.setDoOutput(true);
+            con.setRequestProperty("Authorization","Bearer "+token);con.setRequestProperty("Idempotency-Key",id);
+            con.setRequestProperty("Content-Type",hash==null?"application/json":"application/octet-stream");
+            if(hash!=null)con.setRequestProperty("X-Chunk-SHA256",hash);
+            con.setFixedLengthStreamingMode(body.length);
+            try(OutputStream out=con.getOutputStream()){out.write(body);}
+            int code=con.getResponseCode();if(code!=200)throw new IOException("분할 전송 HTTP "+code);
+            try(InputStream in=con.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){
+                byte[] buf=new byte[1024];int n;while((n=in.read(buf))!=-1){out.write(buf,0,n);if(out.size()>8192)throw new IOException("응답 크기 초과");}
+                JSONObject response=new JSONObject(out.toString("UTF-8"));if(!id.equals(response.optString("id")))throw new IOException("전송 확인 ID 불일치");return response;
+            }
+        }finally{con.disconnect();}
+    }
+    static void uploadRecording(Context c,String base,String token,String id,JSONObject meta,Uri uri)throws Exception{
+        verifyRecording(c,uri,meta);
+        JSONObject state=chunkRequest(base,token,id,"start",meta.toString().getBytes(StandardCharsets.UTF_8),null);
+        if(state.optBoolean("accepted"))return;
+        int chunk=state.getInt("chunkSize"),next=state.getInt("nextChunk");long size=meta.getLong("size");
+        if(chunk!=8*1024*1024||next<0||(long)next>(size+chunk-1)/chunk)throw new IOException("잘못된 분할 전송 응답");
+        try(InputStream in=c.getContentResolver().openInputStream(uri)){
+            if(in==null)throw new IOException("녹음 파일 열기 실패");
+            long offset=Math.min(size,(long)next*chunk),skip=offset;
+            while(skip>0){long n=in.skip(skip);if(n==0){if(in.read()==-1)throw new EOFException();n=1;}skip-=n;}
+            while(offset<size){
+                if(Thread.currentThread().isInterrupted()||!Store.prefs(c).getBoolean("upload",false))throw new IOException("전송 중지");
+                byte[] data=new byte[(int)Math.min(chunk,size-offset)];int pos=0;
+                while(pos<data.length){int n=in.read(data,pos,data.length-pos);if(n<0)throw new EOFException();pos+=n;}
+                byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(data);StringBuilder hash=new StringBuilder();for(byte b:digest)hash.append(String.format(java.util.Locale.ROOT,"%02x",b&255));
+                chunkRequest(base,token,id,"chunk?index="+next,data,hash.toString());offset+=data.length;next++;
+                Store.prefs(c).edit().putString("status","녹음 분할 전송 · "+(offset*100/size)+"%").apply();
+            }
+        }
+        verifyRecording(c,uri,meta);
+        if(!chunkRequest(base,token,id,"complete",new byte[0],null).optBoolean("accepted"))throw new IOException("녹음 저장 확인 실패");
+    }
     static void uploadAttachment(Context c,String base,String token,JSONObject a)throws Exception{
         String id=a.getString("fileId"),local=a.getString("localFile");
         if(!id.matches("[a-f0-9]{64}")||!id.equals(local))throw new IOException("Invalid attachment reference");

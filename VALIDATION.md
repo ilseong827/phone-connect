@@ -105,3 +105,9 @@
 ## v1.2.3 responsive layout
 - Live authenticated viewer: 3440px viewport/app/document widths all 3440px; 390px mobile widths all 390px, with no horizontal overflow.
 - Container rebuilt and deployed with existing data mount. Unauthenticated remote API returns 401.
+
+## v1.2.4 resumable recordings
+- Go test ./..., race tests and vet passed; Android debug build and unit tests passed.
+- Tested missing chunks, bad checksum, invalid index, identical retry, conflicting retry, restart state recovery, exact reconstructed bytes and duplicate completion.
+- Physical Android device uploaded a 166,984,453-byte recording through the existing public HTTPS tunnel. Restarted the container after 5 chunks (40 MiB); resumed and completed. Source/server SHA-256 matched; DB contained exactly one recording; staging chunks removed.
+- Existing data mount and authentication settings preserved. Server v1.2.4, Android versionCode 8 / 0.5.2.

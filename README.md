@@ -2,9 +2,9 @@
 
 **내 휴대폰의 카카오톡·문자·통화 녹음을 PC에 보관하고 Dot에서 조회합니다.**
 
-[컨테이너 설치 파일](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.3) · [Android APK](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.0) · [Docker / Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Google 로그인 외부 웹](server/REMOTE-WEB.md)
+[컨테이너 설치 파일](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.4) · [Android APK](https://github.com/ilseong827/phone-connect/releases/tag/v1.2.4) · [Docker / Podman 실행 안내](server/container/README.md) · [ChatGPT · Dot MCP 연결](server/MCP.md) · [Google 로그인 외부 웹](server/REMOTE-WEB.md)
 
-> v1.2.3는 고정 도메인 자동 실행과 본인 Google 로그인으로 보호되는 외부 조회 웹을 지원합니다. 릴리스의 `start.sh`와 이미지 파일을 같은 폴더에 두고 개인 `phone-connect-data/`를 복원한 뒤 `bash start.sh`로 시작합니다. OAuth 제공자·주소의 최초 설정과 실제 ChatGPT/Dot 연결은 계정에서 마쳐야 합니다. 개인 인증 정보는 공개 다운로드에 포함되지 않습니다.
+> v1.2.4는 고정 도메인 자동 실행과 본인 Google 로그인으로 보호되는 외부 조회 웹을 지원합니다. 릴리스의 `start.sh`와 이미지 파일을 같은 폴더에 두고 개인 `phone-connect-data/`를 복원한 뒤 `bash start.sh`로 시작합니다. OAuth 제공자·주소의 최초 설정과 실제 ChatGPT/Dot 연결은 계정에서 마쳐야 합니다. 개인 인증 정보는 공개 다운로드에 포함되지 않습니다.
 
 ## 구조
 
@@ -61,3 +61,6 @@ MCP는 OAuth와 본인 계정 검증을 사용합니다. 이전 Python 조회키
 - [검증 이력](VALIDATION.md) · [네이티브 Ubuntu 설치](server/src/README-UBUNTU.md)
 
 소스와 릴리스는 공개입니다. 실제 메시지·녹음·주소록·인증키·개인 설정은 포함하지 않습니다.
+
+## 대용량 녹음 전송
+서버 v1.2.4 + Android 0.5.2부터 32 MiB 초과 녹음은 8 MiB씩 전송합니다. 네트워크가 끊기거나 서버가 재시작되어도 저장된 조각부터 이어 보냅니다. 서버를 먼저 업데이트한 뒤 새 APK를 설치하세요. [상세 프로토콜](server/RESUMABLE-UPLOAD.md)

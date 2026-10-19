@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-const version = "1.2.3"
+const version = "1.2.4"
 
 var idPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 var toolNames = []string{"relay_status", "search_messages", "get_conversation", "get_record", "list_recordings", "get_transcript", "search_transcripts"}

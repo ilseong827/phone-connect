@@ -182,6 +182,10 @@ func (a *App) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "Invalid id")
 		return
 	}
+	if strings.HasPrefix(r.URL.Path, "/v1/recording-upload/") {
+		a.recordingUpload(w, r, id)
+		return
+	}
 	if r.URL.Path == "/v1/attachments/"+id {
 		f, e := os.CreateTemp(a.dir, ".upload-")
 		if e != nil {
